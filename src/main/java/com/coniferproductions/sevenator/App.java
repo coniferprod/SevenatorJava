@@ -25,10 +25,6 @@ public class App {
             System.out.println("Different channel.");
         }
 
-        //RangedInteger ri = new RangedInteger();  // abstract class, can't instantiate
-        //BadChannel bc = new BadChannel(10);  // internally inconsistent, throws exception
-        //Level level = new Level(100);  // initial value out of range, throws exception
-
         MIDINote middleC = new MIDINote(60);
         System.out.println("Middle C is MIDI note number " + middleC.value()
             + ", or " + middleC);
