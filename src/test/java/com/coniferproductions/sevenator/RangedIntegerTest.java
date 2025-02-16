@@ -1,6 +1,8 @@
 package com.coniferproductions.sevenator;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,8 +40,14 @@ public class RangedIntegerTest {
     }
 
     @Test
+    public void containsIsCorrect() {
+        assertTrue(Grade.TYPE.contains(3));
+        assertFalse(Grade.TYPE.contains(0));
+    }
+
+    @Test
     public void rejectsIncorrectValue() {
-        Assertions.assertThrows(
+        assertThrows(
                 IllegalArgumentException.class,
                 () -> new Grade(6));
     }
@@ -52,7 +60,7 @@ public class RangedIntegerTest {
             }
         }
 
-        Assertions.assertThrows(
+        assertThrows(
                 IllegalArgumentException.class,
                 () -> new BadGrade(4));
     }
