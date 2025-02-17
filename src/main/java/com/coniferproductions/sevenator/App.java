@@ -38,7 +38,7 @@ public class App {
         }
         System.out.println();
 
-        System.out.println(String.format("Level = [%d, %d]", Level.TYPE.first(), Level.TYPE.last()));
+        System.out.printf("Level = [%d, %d]%n", Level.TYPE.first(), Level.TYPE.last());
         Level level1 = new Level(50);
         Level level2 = new Level(50);
         if (level1.equals(level2)) {
@@ -83,8 +83,8 @@ public class App {
         long totalMemory = runtime.totalMemory();
         long freeMemory = runtime.freeMemory();
         long usedMemory = totalMemory - freeMemory;
-        System.out.println(String.format("Total memory: %10d", totalMemory));
-        System.out.println(String.format("Free memory:  %10d", freeMemory));
-        System.out.println(String.format("Used memory:  %10d", usedMemory));
+        System.out.printf("Total memory: %10d%n", totalMemory);
+        System.out.printf("Free memory:  %10d%n", freeMemory);
+        System.out.printf("Used memory:  %10d%n", usedMemory);
     }
 }

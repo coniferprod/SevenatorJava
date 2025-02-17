@@ -1,46 +1,93 @@
 package com.coniferproductions.sevenator;
 
+/**
+ * Abstract base class for an integer that conforms to a closed range.
+ */
 public abstract class RangedInteger {
     private final int value;
     private final int first;
     private final int last;
 
+    /**
+     * Constructs an instance with the bounds and an initial value.
+     *
+     * @param first the lower bound
+     * @param last the upper bound
+     * @param value the initial value
+     */
     public RangedInteger(int first, int last, int value) {
         if (first >= last) {
             throw new IllegalArgumentException(
-                String.format("Lower bound %d must be less than upper bound %d", first, last));
+                String.format(
+                        "Lower bound %d must be less than upper bound %d",
+                        first, last));
         }
         this.first = first;
         this.last = last;
 
         if (value < first || value > last) {
             throw new IllegalArgumentException(
-                String.format("Value %d must be within the bounds [%d...%d]", value, first, last));
+                String.format(
+                        "Value %d must be within the bounds [%d...%d]",
+                        value, first, last));
         }
+
         this.value = value;
     }
 
+    /**
+     * Gets the current value of the wrapped integer.
+     *
+     * @return the wrapped integer value
+     */
     public int value() {
         return value;
     }
 
+    /**
+     * Gets the lower bound of the range.
+     *
+     * @return the lower bound
+     */
     public int first() {
         return first;
     }
 
+    /**
+     * Gets the upper bound of the range.
+     *
+     * @return the upper bound
+     */
     public int last() {
         return last;
     }
 
+    /**
+     * Checks if the specified value is inside the bounds.
+     *
+     * @param value the value to check
+     * @return <code>true</code> if the value is inside the bounds, <code>false</code> if not
+     */
     public boolean contains(int value) {
         return (value >= this.first() && value <= this.last());
     }
 
+    /**
+     * Gets a string representation of the wrapped value.
+     *
+     * @return formatted value
+     */
     @Override
     public String toString() {
         return Integer.toString(this.value);
     }
 
+    /**
+     * Checks for equality with this and another wrapped value.
+     *
+     * @param o the other value
+     * @return <code>true</code> if equal, <code>false</code> if not
+     */
     @Override
     public boolean equals(Object o) {
         // Check if the argument is a reference to this object
