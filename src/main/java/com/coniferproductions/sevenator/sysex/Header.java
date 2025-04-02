@@ -1,4 +1,6 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.sysex;
+
+import com.coniferproductions.sevenator.UInt8;
 
 import java.util.List;
 
@@ -69,4 +71,6 @@ public class Header {
     public Channel getChannel() {
         return this.channel;
     }
+
+    public int getDataSize() { return 4; }
 }

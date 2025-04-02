@@ -1,4 +1,4 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.datamodel;
 
 public enum Octave {
     YAMAHA(-1),

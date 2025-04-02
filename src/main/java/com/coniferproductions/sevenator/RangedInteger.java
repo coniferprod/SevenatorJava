@@ -33,6 +33,8 @@ public abstract class RangedInteger {
         }
 
         this.value = value;
+
+        count++;
     }
 
     /**
@@ -105,4 +107,7 @@ public abstract class RangedInteger {
         // We only care about the wrapped value, not the bounds
         return this.value == that.value;
     }
+
+    private static int count;
+    public static int getCount() { return count; }
 }

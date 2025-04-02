@@ -1,4 +1,6 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.sysex;
+
+import com.coniferproductions.sevenator.RangedInteger;
 
 public final class Channel extends RangedInteger {
     public Channel(int value) {

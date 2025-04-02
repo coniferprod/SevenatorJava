@@ -1,4 +1,4 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.sysex;
 
 import java.util.HashMap;
 import java.util.Map;

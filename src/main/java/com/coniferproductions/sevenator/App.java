@@ -1,5 +1,13 @@
 package com.coniferproductions.sevenator;
 
+import com.coniferproductions.sevenator.datamodel.Cartridge;
+import com.coniferproductions.sevenator.datamodel.Octave;
+import com.coniferproductions.sevenator.datamodel.ParseException;
+import com.coniferproductions.sevenator.sysex.Channel;
+import com.coniferproductions.sevenator.sysex.Header;
+import com.coniferproductions.sevenator.sysex.MIDINote;
+import com.coniferproductions.sevenator.sysex.Message;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -7,8 +15,50 @@ import java.util.List;
 import java.util.ArrayList;
 import java.nio.ByteOrder;
 
+import static java.lang.System.Logger.Level.*;
+
 public class App {
+    public static final String LOGGER_NAME = "com.coniferproductions.sevenator";
+    private static System.Logger logger = System.getLogger(LOGGER_NAME);
+
     public static void main(String[] args) {
+        List<UInt8> data = new ArrayList<>();
+        try {
+            byte[] contents = Files.readAllBytes(Paths.get(args[0]));
+
+            for (byte b : contents) {
+                int value = b & 0xff;
+                data.add(new UInt8(value));
+            }
+        } catch (IOException ioe) {
+            System.err.println(ioe.getLocalizedMessage());
+            ioe.printStackTrace();
+            System.exit(1);
+        }
+
+        Message message = Message.parse(data);
+        logger.log(DEBUG, "data length = " + data.size());
+
+        Header header = Header.parse(message.getPayload());
+        logger.log(DEBUG, header);
+
+        List<UInt8> payload = message.getPayload();
+        List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
+
+        try {
+            //UInt8.printList(cartridgeData);
+            Cartridge cartridge = Cartridge.parse(cartridgeData);
+
+            String xml = cartridge.toXML();
+            System.out.println(xml);
+
+        } catch (ParseException pe) {
+            System.err.println("Parse error: " + pe.getMessage());
+            System.exit(1);
+        }
+    }
+
+    public static void test(String arg0) {
         System.out.println("System byte order = " + ByteOrder.nativeOrder());
 
         Channel channel = new Channel(1);
@@ -38,18 +88,9 @@ public class App {
         }
         System.out.println();
 
-        System.out.printf("Level = [%d, %d]%n", Level.TYPE.first(), Level.TYPE.last());
-        Level level1 = new Level(50);
-        Level level2 = new Level(50);
-        if (level1.equals(level2)) {
-            System.out.println("The levels are equal.");
-        } else {
-            System.out.println("The levels are not equal.");
-        }
-
         List<UInt8> data = new ArrayList<>();
         try {
-            byte[] contents = Files.readAllBytes(Paths.get(args[0]));
+            byte[] contents = Files.readAllBytes(Paths.get(arg0));
 
             for (byte b : contents) {
                 int value = b & 0xff;
@@ -78,6 +119,8 @@ public class App {
         }
         System.out.println();
         */
+
+        System.out.printf("RangedInteger subclass instances created: %d%n", RangedInteger.getCount());
 
         Runtime runtime = Runtime.getRuntime();
         long totalMemory = runtime.totalMemory();

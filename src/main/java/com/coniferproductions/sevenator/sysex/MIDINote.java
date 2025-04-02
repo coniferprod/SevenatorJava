@@ -1,4 +1,7 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.sysex;
+
+import com.coniferproductions.sevenator.RangedInteger;
+import com.coniferproductions.sevenator.datamodel.Octave;
 
 public final class MIDINote extends RangedInteger {
     public static Octave octave = Octave.ROLAND;

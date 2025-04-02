@@ -1,4 +1,6 @@
-package com.coniferproductions.sevenator;
+package com.coniferproductions.sevenator.sysex;
+
+import com.coniferproductions.sevenator.UInt8;
 
 import java.util.List;
 import java.util.ArrayList;
