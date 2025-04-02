@@ -4,6 +4,7 @@ import com.coniferproductions.sevenator.UInt8;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class KeyboardLevelScaling {
@@ -30,6 +31,20 @@ public class KeyboardLevelScaling {
                 case EXPONENTIAL -> "EXP";
             });
             return sb.toString();
+        }
+
+        public UInt8 toUInt8() {
+            int value = switch (this.style) {
+                case LINEAR -> switch (this.sign) {
+                    case POSITIVE -> 3;
+                    case NEGATIVE -> 0;
+                };
+                case EXPONENTIAL -> switch (this.sign) {
+                    case POSITIVE -> 2;
+                    case NEGATIVE -> 1;
+                };
+            };
+            return new UInt8(value);
         }
     }
 
@@ -72,6 +87,18 @@ public class KeyboardLevelScaling {
         kls.right = new Scaling(new Level(data.get(2).value()), rightCurve);
 
         return kls;
+    }
+
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        result.add(new UInt8(this.breakpoint.value()));
+        result.add(new UInt8(this.left.depth.value()));
+        result.add(new UInt8(this.right.depth.value()));
+        result.add(this.left.curve.toUInt8());
+        result.add(this.right.curve.toUInt8());
+
+        return result;
     }
 
     public Element toXML(Document document) {

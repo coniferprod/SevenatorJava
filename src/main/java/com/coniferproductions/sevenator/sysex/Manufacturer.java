@@ -1,6 +1,10 @@
 package com.coniferproductions.sevenator.sysex;
 
+import com.coniferproductions.sevenator.UInt8;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Manufacturer {
@@ -41,6 +45,19 @@ public class Manufacturer {
         } else {
             return 3;
         }
+    }
+
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        result.add(new UInt8(b1));
+
+        if (this.kind.equals(Kind.EXTENDED)) {
+            result.add(new UInt8(b2));
+            result.add(new UInt8(b3));
+        }
+
+        return result;
     }
 
     @Override

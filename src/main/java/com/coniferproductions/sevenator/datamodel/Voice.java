@@ -6,6 +6,7 @@ import org.w3c.dom.Element;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class Voice {
@@ -85,6 +86,93 @@ public final class Voice {
 
         assert offset == Voice.PACKED_DATA_SIZE;
         assert result.size() == Voice.DATA_SIZE;
+        return result;
+    }
+
+    public static List<UInt8> pack(List<UInt8> data) {
+        List<UInt8> result = new ArrayList<>();
+
+        int offset = 0;
+
+        // The operator data is already in reverse order (OP6 first),
+        // so just take each chunk and pack it.
+
+        final int size = 21;
+        for (int i = 0; i < OPERATOR_COUNT; i++) {
+            var operatorData = data.subList(offset, offset + size);
+            var packedOperatorData = Operator.pack(operatorData);
+            result.addAll(packedOperatorData);
+            offset += size;
+        }
+
+        assert offset == OPERATOR_COUNT * size;
+
+        // Copy the pitch EG as is.
+        result.addAll(data.subList(offset, offset + 8));
+        offset += 8;
+
+        result.add(data.get(offset));  // algorithm
+        offset += 1;
+
+        var byte111 = new UInt8(data.get(offset).value() // feedback
+                | (data.get(offset + 1).value() << 3));  // osc sync
+        result.add(byte111);
+        offset += 2;
+
+        // LFO speed, delay, PMD, AMD
+        result.addAll(data.subList(offset, offset + 4));
+        offset += 4;
+
+        int byte116Value = data.get(offset).value();  // LFO sync
+        int waveformValue = data.get(offset + 1).value();
+        int pmsValue = data.get(offset + 2).value();
+
+        // Thought there might be an error in the Dexed description of packed data:
+        byte116Value |= (waveformValue << 1);  // LFO waveform
+        byte116Value |= (pmsValue << 4);  // pitch mod sens (voice)
+        // Working instead from the Dexed documentation:
+        //byte116.set_bit_range(1..5, data[offset + 1]);
+        //byte116.set_bit_range(5..7, data[offset + 2]);
+
+        //println!("byte116 = {:#04x}", byte116);
+        result.add(new UInt8(byte116Value));
+        offset += 3;
+
+        result.add(data.get(offset));  // transpose
+        offset += 1;
+
+        // voice name
+        result.addAll(data.subList(offset, offset + VoiceName.NAME_LENGTH));
+
+        assert offset == PACKED_DATA_SIZE;
+        return result;
+    }
+
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        for (int i = 5; i >= 0; i--) { // NOTE: reverse order!
+            result.addAll(this.operators.get(i).toData());
+        }
+
+        result.addAll(this.pitchEnvelope.toData());
+
+        result.add(new UInt8(this.algorithm.value() - 1));
+        result.add(new UInt8(this.feedback.value()));
+        result.add(this.oscSync ? UInt8.ONE : UInt8.ZERO);
+        result.addAll(this.lfo.toData());
+        result.add(new UInt8(this.pitchModulationSensitivity.value()));
+        result.add(new UInt8(this.transpose.value()));
+
+        byte[] nameBytes = this.name.toString().getBytes(StandardCharsets.US_ASCII);
+        List<UInt8> nameData = new ArrayList<>();
+        for (int i = 0; i < nameBytes.length; i++) {
+            nameData.add(new UInt8(nameBytes[i]));
+        }
+        result.addAll(nameData);
+
+        assert result.size() == DATA_SIZE;
+
         return result;
     }
 

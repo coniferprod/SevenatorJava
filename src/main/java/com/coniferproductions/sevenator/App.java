@@ -3,10 +3,7 @@ package com.coniferproductions.sevenator;
 import com.coniferproductions.sevenator.datamodel.Cartridge;
 import com.coniferproductions.sevenator.datamodel.Octave;
 import com.coniferproductions.sevenator.datamodel.ParseException;
-import com.coniferproductions.sevenator.sysex.Channel;
-import com.coniferproductions.sevenator.sysex.Header;
-import com.coniferproductions.sevenator.sysex.MIDINote;
-import com.coniferproductions.sevenator.sysex.Message;
+import com.coniferproductions.sevenator.sysex.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,10 +47,37 @@ public class App {
             Cartridge cartridge = Cartridge.parse(cartridgeData);
 
             String xml = cartridge.toXML();
-            System.out.println(xml);
+            //System.out.println(xml);
+
+            List<UInt8> outputData = cartridge.toData();
+            assert outputData.size() == Cartridge.DATA_SIZE;
+            byte[] outputBytes = new byte[outputData.size()];
+            for (int i = 0; i < outputData.size(); i++) {
+                UInt8 b = outputData.get(i);
+                outputBytes[i] = (byte) b.value();
+            }
+
+            List<UInt8> outputPayload = new ArrayList<>();
+            Header outputHeader = new Header(new Channel(1), Header.Format.CARTRIDGE);
+            outputPayload.addAll(outputHeader.toData());
+            outputPayload.addAll(outputData);
+            outputPayload.add(UInt8.checksum(outputPayload));
+            byte[] yamahaData = { 0x43 };
+            Message outputMessage = new Message(new Manufacturer(yamahaData), outputPayload);
+            byte[] messageData = new byte[outputMessage.toData().size()];
+            int index = 0;
+            for (UInt8 b : outputMessage.toData()) {
+                messageData[index] = (byte) b.value();
+                index += 1;
+            }
+
+            Files.write(Paths.get("javaouttest.syx"), messageData);
 
         } catch (ParseException pe) {
             System.err.println("Parse error: " + pe.getMessage());
+            System.exit(1);
+        } catch (IOException ioe) {
+            System.err.println("Error writing output file: " + ioe.getMessage());
             System.exit(1);
         }
     }

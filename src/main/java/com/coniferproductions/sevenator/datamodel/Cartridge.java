@@ -90,4 +90,18 @@ public final class Cartridge {
             return "";
         }
     }
+
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        int index = 0;
+        for (Voice voice : this.voices) {
+            var voiceData = voice.toData();
+            var packedVoiceData = Voice.pack(voiceData);
+            result.addAll(packedVoiceData);
+        }
+
+        assert result.size() == DATA_SIZE;
+        return result;
+    }
 }

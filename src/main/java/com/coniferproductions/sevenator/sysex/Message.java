@@ -21,6 +21,11 @@ public class Message {
         }
     }
 
+    public Message(Manufacturer manufacturer, List<UInt8> payload) {
+        this.manufacturer = manufacturer;
+        this.payload = payload;
+    }
+
     public static Message parse(List<UInt8> data) {
         boolean ok = false;
         ok = data.get(0).equals(SYSEX_INITIATOR);
@@ -54,6 +59,16 @@ public class Message {
         return this.payload;
     }
 
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        result.add(SYSEX_INITIATOR);
+        result.addAll(this.manufacturer.toData());
+        result.addAll(this.payload);
+        result.add(SYSEX_TERMINATOR);
+        return result;
+    }
+
     public static void main(String[] args) {
         List<UInt8> data = new ArrayList<UInt8>();
         //data.add(new UInt8(0));
@@ -69,6 +84,5 @@ public class Message {
         System.out.println("manufacturer size = " + message.getManufacturer().getSize());
         System.out.println("manufacturer = " + message.getManufacturer());
         System.out.println("message payload = " + message.getPayload().size() + " bytes");
-
     }
 }

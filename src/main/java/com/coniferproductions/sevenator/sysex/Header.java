@@ -2,6 +2,7 @@ package com.coniferproductions.sevenator.sysex;
 
 import com.coniferproductions.sevenator.UInt8;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Header {
@@ -26,6 +27,23 @@ public class Header {
     private Short byteCount;  // 14-bit number distributed evenly over two bytes
     // voice=155 (00000010011011 = 0x009B, appears as "01 1B")
     // cartridge=4096 (01000000000000 = 0x1000, appears as "20 00")
+
+    public Header() {
+        this.channel = new Channel(1);
+        this.format = Format.CARTRIDGE;
+        this.substatus = 0;
+        this.byteCount = 4096;
+    }
+
+    public Header(Channel channel, Format format) {
+        this.channel = channel;
+        this.format = format;
+        this.substatus = 0;
+        this.byteCount = switch (format) {
+            case VOICE -> 155;
+            case CARTRIDGE -> 4096;
+        };
+    }
 
     public static Header parse(List<UInt8> data) {
         UInt8 byteCountMSB = data.get(2);
@@ -73,4 +91,23 @@ public class Header {
     }
 
     public int getDataSize() { return 4; }
+
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        result.add(new UInt8(this.channel.value() - 1));  // adjust to 0...15
+        result.add(new UInt8(this.format.format()));
+        switch (this.format) {
+            case VOICE:
+                result.add(new UInt8(0x01));
+                result.add(new UInt8(0x1B));
+                break;
+            case CARTRIDGE:
+                result.add(new UInt8(0x20));
+                result.add(new UInt8(0x00));
+                break;
+        }
+
+        return result;
+    }
 }

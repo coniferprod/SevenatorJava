@@ -45,6 +45,15 @@ public final class UInt8 extends RangedInteger {
         return bs2.charAt(at) == '1';
     }
 
+    public UInt8 setRange(int start, int length, int value) {
+        String bs = this.toBitString();
+
+        String rev = new StringBuilder(bs).reverse().toString();
+
+        UInt8 result = new UInt8();
+        return result;
+    }
+
     public static final UInt8 TYPE = new UInt8(0);
 
     public static final UInt8 ZERO = new UInt8(0);
@@ -56,5 +65,16 @@ public final class UInt8 extends RangedInteger {
             sb.append(String.format("%02X ", b.value()));
         }
         System.out.println(sb.toString());
+    }
+
+    public static UInt8 checksum(List<UInt8> data) {
+        /*
+        let sum: u32 = data.iter().fold(0, |a, &b| a.wrapping_add(b as u32));
+        let mut checksum = sum & 0xff;
+        checksum = !checksum + 1;
+        checksum &= 0x7f;
+        checksum as u8
+        */
+        return new UInt8(0);
     }
 }

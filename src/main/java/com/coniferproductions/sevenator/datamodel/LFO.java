@@ -72,6 +72,19 @@ public class LFO {
         return result;
     }
 
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        result.add(new UInt8(this.speed.value()));
+        result.add(new UInt8(this.delay.value()));
+        result.add(new UInt8(this.pmd.value()));
+        result.add(new UInt8(this.amd.value()));
+        result.add(this.sync ? UInt8.ONE : UInt8.ZERO);
+        result.add(new UInt8(this.waveform.ordinal()));
+
+        return result;
+    }
+
     public Element toXMLNamed(Document document, String tagName) {
         Element element = document.createElement(tagName);
 

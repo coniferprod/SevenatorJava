@@ -34,6 +34,20 @@ public final class Envelope {
         this.levels = levels;
     }
 
+    public List<UInt8> toData() {
+        List<UInt8> result = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            result.add(new UInt8(this.rates.get(i).value()));
+        }
+
+        for (int i = 0; i < 4; i++) {
+            result.add(new UInt8(this.levels.get(i).value()));
+        }
+
+        return result;
+    }
+
     /*
     From the Yamaha DX7 Operation Manual (p. 51):
     "You can simulate an ADSR if you set the envelope as follows:
