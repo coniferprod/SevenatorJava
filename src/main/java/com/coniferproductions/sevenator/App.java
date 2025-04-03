@@ -61,7 +61,7 @@ public class App {
             Header outputHeader = new Header(new Channel(1), Header.Format.CARTRIDGE);
             outputPayload.addAll(outputHeader.toData());
             outputPayload.addAll(outputData);
-            outputPayload.add(UInt8.checksum(outputPayload));
+            outputPayload.add(UInt8.checksum(outputData));
             byte[] yamahaData = { 0x43 };
             Message outputMessage = new Message(new Manufacturer(yamahaData), outputPayload);
             byte[] messageData = new byte[outputMessage.toData().size()];

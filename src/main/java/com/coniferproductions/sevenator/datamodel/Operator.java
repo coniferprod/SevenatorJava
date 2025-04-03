@@ -25,7 +25,7 @@ public class Operator {
     public Detune detune;
 
     public static Operator parse(List<UInt8> data) throws ParseException {
-        System.out.print("OP data = "); UInt8.printList(data);
+        //System.out.print("OP data = "); UInt8.printList(data);
         Envelope eg = Envelope.parse(data.subList(0, 8));
         KeyboardLevelScaling kls = KeyboardLevelScaling.parse(data.subList(8, 13));
         Depth keyboardRateScaling = new Depth(data.get(13).value());
@@ -36,8 +36,6 @@ public class Operator {
         Coarse coarse = new Coarse(data.get(18).value());
         Level fine = new Level(data.get(19).value());
         Detune detune = new Detune(data.get(20).value() - 7);
-
-        // TODO: check adjustments to raw data!
 
         Operator op = new Operator();
         op.eg = eg;
@@ -103,7 +101,7 @@ public class Operator {
 
         result.add(new UInt8(data.get(15).getRange(1, 5))); // coarse
         result.add(new UInt8(data.get(16).value())); // fine
-        result.add(new UInt8(data.get(12).getRange(3, 4))); // detune
+        result.add(new UInt8(data.get(12).getRange(3, 4)));  // detune
 
         return result;
     }
@@ -120,7 +118,7 @@ public class Operator {
         result.add(new UInt8(this.mode.ordinal()));
         result.add(new UInt8(this.coarse.value()));
         result.add(new UInt8(this.fine.value()));
-        result.add(new UInt8(this.detune.value())); // 0 = detune -7, 7 = 0, 14 = +7
+        result.add(new UInt8(this.detune.value() + 7)); // detune -7...+7 to 0...14
 
         assert result.size() == 21;
 

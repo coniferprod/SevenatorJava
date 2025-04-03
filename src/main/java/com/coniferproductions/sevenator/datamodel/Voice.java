@@ -42,7 +42,7 @@ public final class Voice {
     }
 
     public static List<UInt8> unpack(List<UInt8> data) {
-        System.out.print("packed voice data (" + data.size() + ") = "); UInt8.printList(data);
+        //System.out.print("packed voice data (" + data.size() + ") = "); UInt8.printList(data);
 
         List<UInt8> result = new ArrayList<>();
 
@@ -62,12 +62,10 @@ public final class Voice {
         // Algorithm
         assert offset == 110;
         UInt8 alg = data.get(offset);
-        //dbg_hex!(alg);
         result.add(alg);
         offset += 1;
 
         UInt8 feedback = new UInt8(data.get(offset).getRange(0, 3));
-        //dbg_hex!(feedback);
         result.add(feedback); // feedback
         result.add(data.get(offset).getBit(3) ? UInt8.ONE : UInt8.ZERO); // osc sync
         offset += 1;
@@ -157,12 +155,12 @@ public final class Voice {
 
         result.addAll(this.pitchEnvelope.toData());
 
-        result.add(new UInt8(this.algorithm.value() - 1));
+        result.add(new UInt8(this.algorithm.value() - 1));  // adjust to 0...31
         result.add(new UInt8(this.feedback.value()));
         result.add(this.oscSync ? UInt8.ONE : UInt8.ZERO);
         result.addAll(this.lfo.toData());
         result.add(new UInt8(this.pitchModulationSensitivity.value()));
-        result.add(new UInt8(this.transpose.value()));
+        result.add(new UInt8(this.transpose.value() * 12 + 24));  // adjust -2...+2 to 0...48
 
         byte[] nameBytes = this.name.toString().getBytes(StandardCharsets.US_ASCII);
         List<UInt8> nameData = new ArrayList<>();
@@ -177,7 +175,7 @@ public final class Voice {
     }
 
     public static Voice parse(List<UInt8> data) throws ParseException {
-        System.out.print(" (" + data.size() + "): "); UInt8.printList(data);
+        //System.out.print(" (" + data.size() + "): "); UInt8.printList(data);
 
         // Note that the operator data is in reverse order:
         // OP6 is first, OP1 is last.
@@ -194,7 +192,7 @@ public final class Voice {
 
         Depth feedback = new Depth(data.get(135).value());
 
-        // number of octaves to transpose (-2...+2) (12 = C2 (value is 0...48 in SysEx)
+        // number of octaves to transpose (-2...+2) (12 = C2, value is 0...48 in SysEx)
         Transpose transpose = new Transpose((data.get(144).value() - 24) / 12);
 
         List<UInt8> nameData = data.subList(145, 155);

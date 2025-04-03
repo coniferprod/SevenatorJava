@@ -34,14 +34,14 @@ public final class Cartridge {
                     String.format("Error in data size, expecting %d bytes, got %d", DATA_SIZE, data.size()));
         }
 
-        System.out.print("cartridge data = "); UInt8.printList(data.subList(0, 32));
+        //System.out.print("cartridge data = "); UInt8.printList(data.subList(0, 32));
         Cartridge cartridge = new Cartridge();
 
         int offset = 0;
         for (int i = 0; i < VOICE_COUNT; i++) {
             List<UInt8> packedVoiceData = data.subList(offset, offset + Voice.PACKED_DATA_SIZE);
             List<UInt8> voiceData = Voice.unpack(packedVoiceData);
-            System.out.print("offset = " + offset + ", voice " + (i + 1) + " data ");
+            //System.out.print("offset = " + offset + ", voice " + (i + 1) + " data ");
             Voice voice = Voice.parse(voiceData);
             cartridge.voices.set(i, voice);
             offset += Voice.PACKED_DATA_SIZE;

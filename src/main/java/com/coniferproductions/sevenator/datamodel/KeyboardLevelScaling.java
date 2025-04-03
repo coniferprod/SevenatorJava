@@ -62,7 +62,7 @@ public class KeyboardLevelScaling {
     }
 
     public static KeyboardLevelScaling parse(List<UInt8> data) throws ParseException {
-        System.out.print("KLS data: "); UInt8.printList(data);
+        //System.out.print("KLS data: "); UInt8.printList(data);
         KeyboardLevelScaling kls = new KeyboardLevelScaling();
         kls.breakpoint = new Key(data.get(0).value());
 

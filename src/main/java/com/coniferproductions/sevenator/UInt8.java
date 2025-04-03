@@ -68,13 +68,19 @@ public final class UInt8 extends RangedInteger {
     }
 
     public static UInt8 checksum(List<UInt8> data) {
-        /*
-        let sum: u32 = data.iter().fold(0, |a, &b| a.wrapping_add(b as u32));
-        let mut checksum = sum & 0xff;
-        checksum = !checksum + 1;
-        checksum &= 0x7f;
-        checksum as u8
-        */
-        return new UInt8(0);
+        // Copy the data into a byte array
+        byte[] bytes = new byte[data.size()];
+        int index = 0;
+        for (UInt8 b : data) {
+            bytes[index] = (byte) b.value();
+            index++;
+        }
+
+        // Compute the checksum
+        int checksum = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            checksum = (checksum + bytes[i]) & 0x7F;
+        }
+        return new UInt8((0x80 - checksum) & 0x7F);
     }
 }
