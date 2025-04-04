@@ -16,6 +16,8 @@ import java.nio.ByteOrder;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -32,29 +34,34 @@ public class App extends Application {
     private static System.Logger logger = System.getLogger(LOGGER_NAME);
 
     private Cartridge cartridge;
+    private ListView<String> listView;
+    ObservableList<String> voiceNameList;
 
     public App() {
         this.cartridge = new Cartridge();
+        this.voiceNameList = FXCollections.observableArrayList();
+        List<String> voiceNames = new ArrayList<>();
+        for (Voice voice : this.cartridge.voices) {
+            voiceNames.add(voice.name.toString());
+        }
+        voiceNameList.addAll(voiceNames);
+        this.listView = new ListView<String>(voiceNameList);
+    }
 
+    private void populateVoiceList() {
+        this.voiceNameList.clear();
+        List<String> voiceNames = new ArrayList<>();
+        for (Voice voice : this.cartridge.voices) {
+            voiceNames.add(voice.name.toString());
+        }
+        voiceNameList.addAll(voiceNames);
     }
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        TreeItem rootItem = new TreeItem("Cartridge");
+        populateVoiceList();
 
-        TreeItem voicesItem = new TreeItem("Voices");
-        var children = voicesItem.getChildren();
-        for (Voice voice : this.cartridge.voices) {
-            children.add(new TreeItem(voice.name));
-        }
-        rootItem.getChildren().add(voicesItem);
-
-        TreeView treeView = new TreeView();
-        treeView.setRoot(rootItem);
-
-        treeView.setShowRoot(false);
-
-        VBox vbox = new VBox(treeView);
+        VBox vbox = new VBox(this.listView);
 
         SplitPane splitPane = new SplitPane();
 
@@ -80,7 +87,7 @@ public class App extends Application {
 
         Scene scene = new Scene(borderPane, 1024, 768);
 
-        primaryStage.setTitle("Hello!");
+        primaryStage.setTitle("Sevenator");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -117,7 +124,7 @@ public class App extends Application {
                 List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
 
                 cartridge = Cartridge.parse(cartridgeData);
-
+                populateVoiceList();
             } catch (IOException ioe) {
                 System.err.println("Error reading file: " + ioe.getLocalizedMessage());
             } catch (ParseException pe) {
@@ -143,14 +150,14 @@ public class App extends Application {
 
         MenuItem exportMenuItem = new MenuItem("Export to XML");
         exportMenuItem.setOnAction(e -> {
-            //File selectedFile = fileChooser.showSaveDialog(primaryStage);
-            //System.out.println("File | Export to XML selected, file = " + selectedFile.getPath());
+            File selectedFile = fileChooser.showSaveDialog(stage);
+            System.out.println("File | Export to XML selected, file = " + selectedFile.getPath());
 
             String xml = this.cartridge.toXML();
             //System.out.println(xml);
             try {
                 BufferedWriter writer = new BufferedWriter(
-                        new FileWriter(System.getProperty("user.home") + "/tmp/banktest.xml"));
+                        new FileWriter(selectedFile));
                 writer.write(xml);
                 writer.close();
             } catch (FileNotFoundException fnfe) {
