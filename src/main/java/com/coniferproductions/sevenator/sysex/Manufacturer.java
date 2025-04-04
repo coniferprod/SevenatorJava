@@ -92,6 +92,8 @@ public class Manufacturer {
         // Not assigned: 45H, 49H, 4AH, 4DH, 4F, 53H, 58H, 5BH, 5DH, 5EH
     }
 
+    public static final Manufacturer YAMAHA = new Manufacturer(new byte[] { 0x43 });
+
     public static void main(String[] args) {
         Manufacturer m;
 

@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public final class UInt8 extends RangedInteger {
     public UInt8(int value) {
@@ -82,5 +83,23 @@ public final class UInt8 extends RangedInteger {
             checksum = (checksum + bytes[i]) & 0x7F;
         }
         return new UInt8((0x80 - checksum) & 0x7F);
+    }
+
+    public static List<UInt8> listFromByteArray(byte[] ba) {
+        List<UInt8> result = new ArrayList<>();
+
+        for (byte b : ba) {
+            result.add(new UInt8(b & 0xFF));
+        }
+
+        return result;
+    }
+
+    public static byte[] byteArrayFromList(List<UInt8> list) {
+        byte[] result = new byte[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = (byte) list.get(i).value();
+        }
+        return result;
     }
 }

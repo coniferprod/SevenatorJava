@@ -22,11 +22,7 @@ public class App {
         List<UInt8> data = new ArrayList<>();
         try {
             byte[] contents = Files.readAllBytes(Paths.get(args[0]));
-
-            for (byte b : contents) {
-                int value = b & 0xff;
-                data.add(new UInt8(value));
-            }
+            data = UInt8.listFromByteArray(contents);
         } catch (IOException ioe) {
             System.err.println(ioe.getLocalizedMessage());
             ioe.printStackTrace();
@@ -47,32 +43,19 @@ public class App {
             Cartridge cartridge = Cartridge.parse(cartridgeData);
 
             String xml = cartridge.toXML();
-            //System.out.println(xml);
+            System.out.println(xml);
 
             List<UInt8> outputData = cartridge.toData();
             assert outputData.size() == Cartridge.DATA_SIZE;
-            byte[] outputBytes = new byte[outputData.size()];
-            for (int i = 0; i < outputData.size(); i++) {
-                UInt8 b = outputData.get(i);
-                outputBytes[i] = (byte) b.value();
-            }
 
             List<UInt8> outputPayload = new ArrayList<>();
             Header outputHeader = new Header(new Channel(1), Header.Format.CARTRIDGE);
             outputPayload.addAll(outputHeader.toData());
             outputPayload.addAll(outputData);
             outputPayload.add(UInt8.checksum(outputData));
-            byte[] yamahaData = { 0x43 };
-            Message outputMessage = new Message(new Manufacturer(yamahaData), outputPayload);
-            byte[] messageData = new byte[outputMessage.toData().size()];
-            int index = 0;
-            for (UInt8 b : outputMessage.toData()) {
-                messageData[index] = (byte) b.value();
-                index += 1;
-            }
-
+            Message outputMessage = new Message(Manufacturer.YAMAHA, outputPayload);
+            byte[] messageData = UInt8.byteArrayFromList(outputMessage.toData());
             Files.write(Paths.get("javaouttest.syx"), messageData);
-
         } catch (ParseException pe) {
             System.err.println("Parse error: " + pe.getMessage());
             System.exit(1);
@@ -115,14 +98,9 @@ public class App {
         List<UInt8> data = new ArrayList<>();
         try {
             byte[] contents = Files.readAllBytes(Paths.get(arg0));
-
-            for (byte b : contents) {
-                int value = b & 0xff;
-                data.add(new UInt8(value));
-            }
-
             System.out.printf("%02X ... %02X", contents[0], contents[contents.length - 1]);
 
+            data = UInt8.listFromByteArray(contents);
             Message message = Message.parse(data);
             System.out.printf("%nMessage information:%n");
             System.out.printf("payload = %d bytes%n%n", message.getPayload().size());
@@ -135,14 +113,6 @@ public class App {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
-
-        /*
-        for (UInt8 b : data) {
-            System.out.print(String.format("%02x", b.value()));
-            System.out.print(" ");
-        }
-        System.out.println();
-        */
 
         System.out.printf("RangedInteger subclass instances created: %d%n", RangedInteger.getCount());
 
