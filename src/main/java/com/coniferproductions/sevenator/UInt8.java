@@ -89,7 +89,7 @@ public final class UInt8 extends RangedInteger {
         List<UInt8> result = new ArrayList<>();
 
         for (byte b : ba) {
-            result.add(new UInt8(b & 0xFF));
+            result.add(new UInt8(Byte.toUnsignedInt(b)));
         }
 
         return result;

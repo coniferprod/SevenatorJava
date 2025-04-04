@@ -1,24 +1,179 @@
 package com.coniferproductions.sevenator;
 
 import com.coniferproductions.sevenator.datamodel.Cartridge;
+import com.coniferproductions.sevenator.datamodel.Voice;
 import com.coniferproductions.sevenator.datamodel.Octave;
 import com.coniferproductions.sevenator.datamodel.ParseException;
 import com.coniferproductions.sevenator.sysex.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.ByteOrder;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
 import static java.lang.System.Logger.Level.*;
 
-public class App {
+public class App extends Application {
     public static final String LOGGER_NAME = "com.coniferproductions.sevenator";
     private static System.Logger logger = System.getLogger(LOGGER_NAME);
 
+    private Cartridge cartridge;
+
+    public App() {
+        this.cartridge = new Cartridge();
+
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws IOException {
+        TreeItem rootItem = new TreeItem("Cartridge");
+
+        TreeItem voicesItem = new TreeItem("Voices");
+        var children = voicesItem.getChildren();
+        for (Voice voice : this.cartridge.voices) {
+            children.add(new TreeItem(voice.name));
+        }
+        rootItem.getChildren().add(voicesItem);
+
+        TreeView treeView = new TreeView();
+        treeView.setRoot(rootItem);
+
+        treeView.setShowRoot(false);
+
+        VBox vbox = new VBox(treeView);
+
+        SplitPane splitPane = new SplitPane();
+
+        VBox rightControl = new VBox(new Label("Right Control"));
+
+        splitPane.getItems().addAll(vbox, rightControl);
+
+        BorderPane borderPane = new BorderPane();
+
+        MenuBar menuBar = new MenuBar();
+        final String os = System.getProperty("os.name");
+        if (os != null && os.startsWith("Mac")) {
+            menuBar.useSystemMenuBarProperty().set(true);
+        }
+        Menu fileMenu = makeFileMenu(primaryStage);
+        menuBar.getMenus().add(fileMenu);
+
+        borderPane.setTop(menuBar);
+        borderPane.setCenter(splitPane);
+
+        HBox statusBar = new HBox();
+        borderPane.setBottom(statusBar);
+
+        Scene scene = new Scene(borderPane, 1024, 768);
+
+        primaryStage.setTitle("Hello!");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private Menu makeFileMenu(Stage stage) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("MIDI System Exclusive Files", "*.syx"),
+                new FileChooser.ExtensionFilter("XML Cartridge Description Files", "*.xml")
+        );
+
+        final Menu fileMenu = new Menu("File");
+
+        MenuItem newMenuItem = new MenuItem("New");
+
+        MenuItem openMenuItem = new MenuItem("Open...");
+        openMenuItem.setOnAction(e -> {
+            File selectedFile = fileChooser.showOpenDialog(stage);
+            System.out.println("File | Open selected, file = " + selectedFile.getPath());
+
+            Path path = Path.of(selectedFile.getPath());
+            List<UInt8> data = new ArrayList<>();
+            try {
+                byte[] contents = Files.readAllBytes(path);
+                data = UInt8.listFromByteArray(contents);
+
+                Message message = Message.parse(data);
+                logger.log(DEBUG, "data length = " + data.size());
+
+                Header header = Header.parse(message.getPayload());
+                logger.log(DEBUG, header);
+
+                List<UInt8> payload = message.getPayload();
+                List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
+
+                cartridge = Cartridge.parse(cartridgeData);
+
+            } catch (IOException ioe) {
+                System.err.println("Error reading file: " + ioe.getLocalizedMessage());
+            } catch (ParseException pe) {
+                System.err.println("Parse error: " + pe.getMessage());
+                System.exit(1);
+            }
+        });
+
+        MenuItem saveMenuItem = new MenuItem("Save");
+        saveMenuItem.setOnAction(e -> {
+            File selectedFile = fileChooser.showSaveDialog(stage);
+            System.out.println("File | Save selected, file = " + selectedFile.getPath());
+
+            byte[] fileData = UInt8.byteArrayFromList(this.cartridge.toData());
+
+            Path path = Path.of(selectedFile.getPath());
+            try {
+                Files.write(path, fileData);
+            } catch (IOException ex) {
+                System.err.println("Error writing file: " + ex.getLocalizedMessage());
+            }
+        });
+
+        MenuItem exportMenuItem = new MenuItem("Export to XML");
+        exportMenuItem.setOnAction(e -> {
+            //File selectedFile = fileChooser.showSaveDialog(primaryStage);
+            //System.out.println("File | Export to XML selected, file = " + selectedFile.getPath());
+
+            String xml = this.cartridge.toXML();
+            //System.out.println(xml);
+            try {
+                BufferedWriter writer = new BufferedWriter(
+                        new FileWriter(System.getProperty("user.home") + "/tmp/banktest.xml"));
+                writer.write(xml);
+                writer.close();
+            } catch (FileNotFoundException fnfe) {
+                System.err.println("Error writing XML to file: " + fnfe.getLocalizedMessage());
+            } catch (IOException ioe) {
+                System.err.println("Error writing XML to file: " + ioe.getLocalizedMessage());
+            }
+        });
+
+        MenuItem exitMenuItem = new MenuItem("Exit");
+        exitMenuItem.setOnAction(e -> {
+            Platform.exit();
+        });
+
+        fileMenu.getItems().addAll(newMenuItem, openMenuItem, saveMenuItem, exportMenuItem,
+                new SeparatorMenuItem(), exitMenuItem);
+        return fileMenu;
+    }
+
     public static void main(String[] args) {
+        launch();
+
+        /*
         List<UInt8> data = new ArrayList<>();
         try {
             byte[] contents = Files.readAllBytes(Paths.get(args[0]));
@@ -63,6 +218,8 @@ public class App {
             System.err.println("Error writing output file: " + ioe.getMessage());
             System.exit(1);
         }
+        */
+
     }
 
     public static void test(String arg0) {
