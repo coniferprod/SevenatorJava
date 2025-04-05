@@ -6,6 +6,7 @@ import com.coniferproductions.sevenator.datamodel.Octave;
 import com.coniferproductions.sevenator.datamodel.ParseException;
 import com.coniferproductions.sevenator.sysex.*;
 
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,11 +24,23 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import static java.lang.System.Logger.Level.*;
+
+import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.ImageTranscoder;
+
+import javafx.embed.swing.SwingNode;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class App extends Application {
     public static final String LOGGER_NAME = "com.coniferproductions.sevenator";
@@ -58,16 +71,31 @@ public class App extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws IOException {
+    public void start(Stage primaryStage) throws IOException, TranscoderException {
         populateVoiceList();
 
         VBox vbox = new VBox(this.listView);
 
         SplitPane splitPane = new SplitPane();
 
-        VBox rightControl = new VBox(new Label("Right Control"));
+        StackPane stackPane = new StackPane();
 
-        splitPane.getItems().addAll(vbox, rightControl);
+        //VBox rightControl = new VBox(new Label("Right Control"));
+
+        // Create an SVGConverter instance with the path to the SVG file.
+        SVGConverter converter = new SVGConverter(Paths.get(System.getProperty("user.home") + "/tmp/dx7algsvg", "alg01.svg").toString());
+        // Read from resources when packaged as JAR.
+
+        // Convert the SVG to a JavaFX Image
+        Image image = converter.toImage();
+
+        // Display the SVG image using an ImageView
+        ImageView imageView = new ImageView(image);
+
+        // Add the ImageView to the parent layout
+        stackPane.getChildren().add(imageView);
+
+        splitPane.getItems().addAll(vbox, stackPane);
 
         BorderPane borderPane = new BorderPane();
 
@@ -289,3 +317,36 @@ public class App extends Application {
         System.out.printf("Used memory:  %10d%n", usedMemory);
     }
 }
+
+class SVGConverter extends ImageTranscoder {
+    private BufferedImage image;
+
+    public SVGConverter(String svgFilePath) throws TranscoderException {
+        // Initialize the SVGConverter with the path to the SVG file
+        TranscoderInput input = new TranscoderInput(svgFilePath);
+        this.transcode(input, null);
+    }
+
+    public BufferedImage toBufferedImage() {
+        return this.image;
+    }
+
+    public Image toImage() {
+        // Convert the BufferedImage to a JavaFX Image
+        return SwingFXUtils.toFXImage(this.toBufferedImage(), null);
+    }
+
+    @Override
+    public BufferedImage createImage(int width, int height) {
+        // Create a new BufferedImage with the specified width and height
+        return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    }
+
+    @Override
+    public void writeImage(BufferedImage img, TranscoderOutput output) throws TranscoderException {
+        // Store the converted image in the 'image' variable
+        image = img;
+    }
+}
+
+// SVG stuff is adapted from https://coderscratchpad.com/displaying-svg-images-in-javafx/
