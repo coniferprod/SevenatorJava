@@ -3,6 +3,8 @@ package com.coniferproductions.sevenator.datamodel;
 import com.coniferproductions.sevenator.UInt8;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -13,6 +15,9 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.coniferproductions.sevenator.App.LOGGER_NAME;
+import static java.lang.System.Logger.Level.*;
 
 public final class Cartridge {
     public static final int DATA_SIZE = 4096;
@@ -25,6 +30,22 @@ public final class Cartridge {
 
         for (int i = 0; i < VOICE_COUNT; i++) {
             this.voices.add(new Voice());
+        }
+    }
+
+    private static System.Logger logger = System.getLogger(LOGGER_NAME);
+
+    public Cartridge(Document document) {
+        Element element = document.getDocumentElement();
+        logger.log(INFO, "Root element =  " + element.getTagName());
+
+        Node voicesNode = element.getFirstChild();
+        logger.log(INFO, "first child node =  " + voicesNode.getNodeName());
+        NodeList voiceNodeList = voicesNode.getChildNodes();
+
+        for (int i = 0; i < voiceNodeList.getLength(); i++) {
+            Node voiceNode = voiceNodeList.item(i);
+            logger.log(INFO, voiceNode.getNodeName());
         }
     }
 
