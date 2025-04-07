@@ -14,13 +14,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.ByteOrder;
-import java.util.logging.Level;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -31,15 +29,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import static java.lang.System.Logger.Level.*;
-import static java.util.logging.Level.SEVERE;
 
-import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.ImageTranscoder;
 
-import javafx.embed.swing.SwingNode;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -48,9 +43,15 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.SchemaFactoryConfigurationError;
+import javax.xml.validation.Validator;
 
 public class App extends Application {
     public static final String LOGGER_NAME = "com.coniferproductions.sevenator";
@@ -141,6 +142,74 @@ public class App extends Application {
         return "";
     }
 
+    private void loadSyxFile(Path path) throws IOException, ParseException {
+        List<UInt8> data = new ArrayList<>();
+        byte[] contents = Files.readAllBytes(path);
+        data = UInt8.listFromByteArray(contents);
+
+        Message message = Message.parse(data);
+        logger.log(DEBUG, "data length = " + data.size());
+
+        Header header = Header.parse(message.getPayload());
+        logger.log(DEBUG, header);
+
+        List<UInt8> payload = message.getPayload();
+        List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
+
+        cartridge = Cartridge.parse(cartridgeData);
+    }
+
+    private void loadXmlDocument(Path path) throws ParserConfigurationException, IOException, SAXException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setNamespaceAware(true);  // required for validation
+        documentBuilderFactory.setValidating(true);
+        documentBuilderFactory.setIgnoringElementContentWhitespace(true);
+
+        // Prepare the documentBuilderFactory for handling schemas
+        final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
+        documentBuilderFactory.setAttribute(JAXP_SCHEMA_LANGUAGE, XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+        DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
+
+        builder.setErrorHandler(new ErrorHandler() {
+            @Override
+            public void warning(SAXParseException exception) throws SAXException {
+                logger.log(WARNING, exception.getMessage());
+            }
+
+            @Override
+            public void error(SAXParseException exception) throws SAXException {
+                logger.log(ERROR, exception.getMessage());
+            }
+
+            @Override
+            public void fatalError(SAXParseException exception) throws SAXException {
+                logger.log(ERROR, exception.getMessage());
+            }
+        });
+        Document document = builder.parse(Files.newInputStream(path));
+
+        // Load the schema for validation
+        Schema schema = null;
+        try {
+            String language = XMLConstants.W3C_XML_SCHEMA_NS_URI;
+            SchemaFactory schemaFactory = SchemaFactory.newInstance(language);
+            schema = schemaFactory.newSchema(
+                    new File(
+                            Paths.get(System.getProperty("user.home") + "/tmp/", "cartridge.xsd").toString()));
+
+            Validator validator = schema.newValidator();
+            validator.validate(new DOMSource(document));
+            logger.log(INFO, path.toString() + " validated successfully");
+
+            document.getDocumentElement().normalize();
+            cartridge = new Cartridge(document);
+
+        } catch (SchemaFactoryConfigurationError sfce) {
+            logger.log(ERROR, sfce.getMessage());
+        }
+    }
+
     private Menu makeFileMenu(Stage stage) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().addAll(
@@ -161,21 +230,8 @@ public class App extends Application {
             String filename = path.getFileName().toString();
             String extension = getFileExtension(filename);  // name is from chooser, won't be null
             if (extension.equals("syx")) {
-                List<UInt8> data = new ArrayList<>();
                 try {
-                    byte[] contents = Files.readAllBytes(path);
-                    data = UInt8.listFromByteArray(contents);
-
-                    Message message = Message.parse(data);
-                    logger.log(DEBUG, "data length = " + data.size());
-
-                    Header header = Header.parse(message.getPayload());
-                    logger.log(DEBUG, header);
-
-                    List<UInt8> payload = message.getPayload();
-                    List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
-
-                    cartridge = Cartridge.parse(cartridgeData);
+                    loadSyxFile(path);
                     populateVoiceList();
                 } catch (IOException ioe) {
                     System.err.println("Error reading file: " + ioe.getLocalizedMessage());
@@ -184,46 +240,14 @@ public class App extends Application {
                     System.exit(1);
                 }
             } else if (extension.equals("xml")) {
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                factory.setNamespaceAware(true);  // required for validation
-                factory.setValidating(true);
-
-                // Prepare the factory for handling schemas
-                final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
-                final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
-                factory.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA);
-
-                factory.setIgnoringElementContentWhitespace(true);
-
                 try {
-                    DocumentBuilder builder = factory.newDocumentBuilder();
-
-                    builder.setErrorHandler(new ErrorHandler() {
-                        @Override
-                        public void warning(SAXParseException exception) throws SAXException {
-                            logger.log(WARNING, exception.getMessage());
-                        }
-
-                        @Override
-                        public void error(SAXParseException exception) throws SAXException {
-                            logger.log(ERROR, exception.getMessage());
-                        }
-
-                        @Override
-                        public void fatalError(SAXParseException exception) throws SAXException {
-                            logger.log(ERROR, exception.getMessage());
-                        }
-                    });
-                    Document document = builder.parse(Files.newInputStream(path));
-                    document.getDocumentElement().normalize();
-                    cartridge = new Cartridge(document);
+                    loadXmlDocument(path);
 
                 } catch (ParserConfigurationException | IOException ex) {
                     throw new RuntimeException(ex);
                 } catch (SAXException ex) {
                     throw new RuntimeException(ex);
                 }
-
             }
         });
 
