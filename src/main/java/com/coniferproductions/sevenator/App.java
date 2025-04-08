@@ -64,9 +64,10 @@ public class App extends Application {
     ObservableList<String> voiceNameList;
 
     public App() {
-        //this.cartridge = new Cartridge();
+        this.cartridge = new Cartridge();
 
         // Hard-code XML document load for testing
+        /*
         Path xmlFile = Paths.get(System.getProperty("user.home") + "/tmp/rom1a.xml");
         try {
             loadXmlDocument(xmlFile); // sets the cartridge from the parsed document
@@ -75,8 +76,7 @@ public class App extends Application {
         } catch (SAXException se) {
             logger.log(ERROR, "Error parsing XML: " + se.getMessage());
         }
-
-        //this.cartridge = new Cartridge(xmlFile);
+        */
 
         this.voiceNameList = FXCollections.observableArrayList();
         List<String> voiceNames = new ArrayList<>();
@@ -94,6 +94,7 @@ public class App extends Application {
             voiceNames.add(voice.name.toString());
         }
         voiceNameList.addAll(voiceNames);
+        this.listView.refresh();
     }
 
     @Override
@@ -106,11 +107,9 @@ public class App extends Application {
 
         StackPane stackPane = new StackPane();
 
-        //VBox rightControl = new VBox(new Label("Right Control"));
-
         // Create an SVGConverter instance with the path to the SVG file.
         SVGConverter converter = new SVGConverter(Paths.get(System.getProperty("user.home") + "/tmp/dx7algsvg", "alg01.svg").toString());
-        // Read from resources when packaged as JAR.
+        // TODO: Read SVG from resources when packaged as JAR.
 
         // Convert the SVG to a JavaFX Image
         Image image = converter.toImage();
@@ -171,7 +170,8 @@ public class App extends Application {
         List<UInt8> payload = message.getPayload();
         List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
 
-        cartridge = Cartridge.parse(cartridgeData);
+        this.cartridge = Cartridge.parse(cartridgeData);
+        this.populateVoiceList();
     }
 
     private void loadXmlDocument(Path path) throws ParserConfigurationException, IOException, SAXException {
@@ -225,9 +225,11 @@ public class App extends Application {
 
             document.getDocumentElement().normalize();
             cartridge = Cartridge.parse(document);
-
+            this.populateVoiceList();
         } catch (SchemaFactoryConfigurationError sfce) {
             logger.log(ERROR, sfce.getMessage());
+        } catch (ParseException pe) {
+            logger.log(ERROR, pe.getMessage());
         }
     }
 
