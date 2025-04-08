@@ -48,6 +48,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.SchemaFactoryConfigurationError;
@@ -62,7 +64,20 @@ public class App extends Application {
     ObservableList<String> voiceNameList;
 
     public App() {
-        this.cartridge = new Cartridge();
+        //this.cartridge = new Cartridge();
+
+        // Hard-code XML document load for testing
+        Path xmlFile = Paths.get(System.getProperty("user.home") + "/tmp/rom1a.xml");
+        try {
+            loadXmlDocument(xmlFile); // sets the cartridge from the parsed document
+        } catch (ParserConfigurationException | IOException ex) {
+            logger.log(ERROR, "Error loading XML: " + ex.getMessage());
+        } catch (SAXException se) {
+            logger.log(ERROR, "Error parsing XML: " + se.getMessage());
+        }
+
+        //this.cartridge = new Cartridge(xmlFile);
+
         this.voiceNameList = FXCollections.observableArrayList();
         List<String> voiceNames = new ArrayList<>();
         for (Voice voice : this.cartridge.voices) {
@@ -161,8 +176,13 @@ public class App extends Application {
 
     private void loadXmlDocument(Path path) throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+
         documentBuilderFactory.setNamespaceAware(true);  // required for validation
-        documentBuilderFactory.setValidating(true);
+
+        // The validation docs say that "You should not both set a schema
+        // and call setValidating(true) on a parser factory"
+        //documentBuilderFactory.setValidating(true);
+
         documentBuilderFactory.setIgnoringElementContentWhitespace(true);
 
         // Prepare the documentBuilderFactory for handling schemas
@@ -190,20 +210,21 @@ public class App extends Application {
         Document document = builder.parse(Files.newInputStream(path));
 
         // Load the schema for validation
-        Schema schema = null;
         try {
-            String language = XMLConstants.W3C_XML_SCHEMA_NS_URI;
-            SchemaFactory schemaFactory = SchemaFactory.newInstance(language);
-            schema = schemaFactory.newSchema(
-                    new File(
-                            Paths.get(System.getProperty("user.home") + "/tmp/", "cartridge.xsd").toString()));
+            // Create a SchemaFactory capable of understanding XML Schemas
+            SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+            // Load XML Schema, represented by a Schema instance
+            Source schemaFile = new StreamSource(
+                    new File(Paths.get(System.getProperty("user.home") + "/tmp/", "cartridge.xsd").toString()));
+            Schema schema = schemaFactory.newSchema(schemaFile);
 
             Validator validator = schema.newValidator();
             validator.validate(new DOMSource(document));
-            logger.log(INFO, path.toString() + " validated successfully");
+            logger.log(INFO, path + " validated successfully");
 
             document.getDocumentElement().normalize();
-            cartridge = new Cartridge(document);
+            cartridge = Cartridge.parse(document);
 
         } catch (SchemaFactoryConfigurationError sfce) {
             logger.log(ERROR, sfce.getMessage());

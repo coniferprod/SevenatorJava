@@ -1,10 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -12,6 +9,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.*;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +23,14 @@ public final class Cartridge {
     public static final int VOICE_COUNT = 32;
     public List<Voice> voices;
 
+    public List<Voice> getVoices() {
+        return voices;
+    }
+
+    public void setVoices(List<Voice> voices) {
+        this.voices = voices;
+    }
+
     public Cartridge() {
         this.voices = new ArrayList<>();
 
@@ -33,20 +39,197 @@ public final class Cartridge {
         }
     }
 
-    private static System.Logger logger = System.getLogger(LOGGER_NAME);
+    public static System.Logger logger = System.getLogger(LOGGER_NAME);
 
-    public Cartridge(Document document) {
-        Element element = document.getDocumentElement();
-        logger.log(INFO, "Root element =  " + element.getTagName());
+    public static Cartridge parse(Document document) {
+        Cartridge cartridge = new Cartridge();
 
-        Node voicesNode = element.getFirstChild();
-        logger.log(INFO, "first child node =  " + voicesNode.getNodeName());
-        NodeList voiceNodeList = voicesNode.getChildNodes();
+        XPathFactory xpathfactory = XPathFactory.newInstance();
+        XPath xpath = xpathfactory.newXPath();
+        try {
+            XPathExpression expr = xpath.compile("//voice");
 
-        for (int i = 0; i < voiceNodeList.getLength(); i++) {
-            Node voiceNode = voiceNodeList.item(i);
-            logger.log(INFO, voiceNode.getNodeName());
+            Object result = expr.evaluate(document, XPathConstants.NODESET);
+            NodeList nodes = (NodeList) result;
+
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Voice voice = new Voice();
+
+                Node voiceNode = nodes.item(i);
+                NamedNodeMap voiceAttrs = voiceNode.getAttributes();
+
+                voice.name = new VoiceName(voiceAttrs.getNamedItem("name").getNodeValue());
+                voice.algorithm = new Algorithm(Integer.parseInt(voiceAttrs.getNamedItem("algorithm").getNodeValue()));
+                voice.transpose = new Transpose(Integer.parseInt(voiceAttrs.getNamedItem("transpose").getNodeValue()));
+                voice.feedback = new Depth(Integer.parseInt(voiceAttrs.getNamedItem("feedback").getNodeValue()));
+                voice.oscSync = Boolean.parseBoolean(voiceAttrs.getNamedItem("oscillatorSync").getNodeValue());
+                voice.pitchModulationSensitivity = new Depth(Integer.parseInt(voiceAttrs.getNamedItem("pitchModulationSensitivity").getNodeValue()));
+
+                List<Operator> operators = new ArrayList<>();
+
+                for (int op = 0; op < Voice.OPERATOR_COUNT; op++) {
+                    String pathBase = String.format("//voice[%d]/operators/operator[%d]", i + 1, op + 1);
+                    StringBuffer pathBuffer = new StringBuffer(pathBase);
+
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    Node opNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+                    //System.out.println(opNode.getNodeName() + "" + (op + 1));
+
+                    pathBuffer.append("/eg");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    Node egNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+
+                    pathBuffer.append("/rates/text()");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    String egRatesText = (String) expr.evaluate(document, XPathConstants.STRING);
+
+                    pathBuffer.setLength(0);
+                    pathBuffer.append(pathBase + "/eg/levels/text()");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    String egLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
+
+                    operators.add(getOperatorFromXml(opNode, egRatesText, egLevelsText));
+
+                    pathBuffer.setLength(0);
+                    pathBuffer.append(pathBase + "/keyboardLevelScaling");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    Node klsNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+
+                    pathBuffer.append("/depth");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    Node depthNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+
+                    pathBuffer.setLength(0);
+                    pathBuffer.append(pathBase + "/keyboardLevelScaling/curve");
+                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    expr = xpath.compile(pathBuffer.toString());
+                    Node curveNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+                }
+
+                voice.setOperators(operators);
+
+                String pathBase = String.format("//voice[%d]/peg", i + 1);
+                StringBuffer pathBuffer = new StringBuffer(pathBase);
+
+                pathBuffer.append("/rates");
+                logger.log(INFO, "path = " + pathBuffer.toString());
+                expr = xpath.compile(pathBuffer.toString());
+                String pegRatesText = (String) expr.evaluate(document, XPathConstants.STRING);
+
+                pathBuffer.setLength(0);
+                pathBuffer.append(pathBase + "/levels");
+                logger.log(INFO, "path = " + pathBuffer.toString());
+                expr = xpath.compile(pathBuffer.toString());
+                String pegLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
+
+                voice.peg = getEgFromXml(pegRatesText, pegLevelsText);
+
+                expr = xpath.compile(String.format("//voice[%d]/lfo", (i + 1)));
+                Node lfoNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+                voice.lfo = getLfoFromXml(lfoNode);
+
+                cartridge.voices.add(voice);
+            }
+
+        } catch (XPathExpressionException e) {
+            throw new RuntimeException(e);
         }
+
+        return cartridge;
+    }
+
+    private static Operator getOperatorFromXml(Node opNode, String ratesText, String levelsText) {
+        Operator op = new Operator();
+
+        NamedNodeMap attrs = opNode.getAttributes();
+        Node attrNode = attrs.getNamedItem("level");
+        op.outputLevel = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("mode");
+        if (attrNode.getNodeValue().equals("ratio")) {
+            op.mode = Operator.Mode.RATIO;
+        } else {
+            op.mode = Operator.Mode.FIXED;
+        }
+
+        attrNode = attrs.getNamedItem("coarse");
+        op.coarse = new Coarse(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("fine");
+        op.fine = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("detune");
+        op.detune = new Detune(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("amplitudeModulationSensitivity");
+        op.amplitudeModulationSensitivity = new Sensitivity(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("keyVelocitySensitivity");
+        op.keyVelocitySensitivity = new Depth(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("keyboardRateScaling");
+        op.keyboardRateScaling = new Depth(Integer.parseInt(attrNode.getNodeValue()));
+
+        op.eg = getEgFromXml(ratesText, levelsText);
+        return op;
+    }
+
+    private static Envelope getEgFromXml(String ratesText, String levelsText) {
+        Envelope eg = new Envelope();
+
+        //String ratesValue = rates.getNodeValue();
+        String[] parts = ratesText.split(" ");
+        for (int i = 0; i < parts.length; i++) {
+            eg.rates.add(new Rate(Integer.parseInt(parts[i])));
+        }
+
+        //String levelsValue = levels.getNodeValue();
+        parts = levelsText.split(" ");
+        for (int i = 0; i < parts.length; i++) {
+            eg.levels.add(new Level(Integer.parseInt(parts[i])));
+        }
+
+        return eg;
+    }
+
+    private static LFO getLfoFromXml(Node node) {
+        LFO lfo = new LFO();
+
+        NamedNodeMap attrs = node.getAttributes();
+        Node attrNode = attrs.getNamedItem("speed");
+
+        lfo.speed = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("delay");
+        lfo.delay = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("pmd");
+        lfo.pmd = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("amd");
+        lfo.amd = new Level(Integer.parseInt(attrNode.getNodeValue()));
+
+        attrNode = attrs.getNamedItem("sync");
+        lfo.sync = Boolean.parseBoolean(attrNode.getNodeValue());
+
+        attrNode = attrs.getNamedItem("wave");
+        lfo.waveform = switch (attrNode.getNodeValue()) {
+            case "saw-down" -> LFO.Waveform.SAW_DOWN;
+            case "saw-up" -> LFO.Waveform.SAW_UP;
+            case "triangle" -> LFO.Waveform.TRIANGLE;
+            case "square" -> LFO.Waveform.SQUARE;
+            case "sine" -> LFO.Waveform.SINE;
+            case "sample-and-hold" -> LFO.Waveform.SAMPLE_AND_HOLD;
+            default -> LFO.Waveform.SINE;
+        };
+
+        return lfo;
     }
 
     public static Cartridge parse(List<UInt8> data) throws ParseException {

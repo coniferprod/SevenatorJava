@@ -19,10 +19,18 @@ public final class Voice {
     public Depth feedback;
     public boolean oscSync;
     public LFO lfo;
-    public Envelope pitchEnvelope;
+    public Envelope peg;
     public Depth pitchModulationSensitivity;
     public Transpose transpose;
     public VoiceName name;
+
+    public List<Operator> getOperators() {
+        return this.operators;
+    }
+
+    public void setOperators(List<Operator> operators) {
+        this.operators = operators;
+    }
 
     public Voice() {
         this.operators = new ArrayList<>();
@@ -35,7 +43,7 @@ public final class Voice {
         this.feedback = new Depth(0);
         this.oscSync = false;
         this.lfo = new LFO();
-        this.pitchEnvelope = new Envelope();
+        this.peg = new Envelope();
         this.pitchModulationSensitivity = new Depth(0);
         this.transpose = new Transpose(0);
         this.name = new VoiceName("INIT VOICE");
@@ -153,7 +161,7 @@ public final class Voice {
             result.addAll(this.operators.get(i).toData());
         }
 
-        result.addAll(this.pitchEnvelope.toData());
+        result.addAll(this.peg.toData());
 
         result.add(new UInt8(this.algorithm.value() - 1));  // adjust to 0...31
         result.add(new UInt8(this.feedback.value()));
@@ -209,7 +217,7 @@ public final class Voice {
 
         Voice voice = new Voice();
         voice.operators = List.of(op1, op2, op3, op4, op5, op6);  // TODO: does this need to be mutable?
-        voice.pitchEnvelope = peg;
+        voice.peg = peg;
         voice.algorithm = alg;
         voice.feedback = feedback;
         voice.oscSync = data.get(136).equals(UInt8.ONE);
@@ -234,7 +242,7 @@ public final class Voice {
         element.setAttribute("oscillatorSync", Boolean.toString(this.oscSync));
         element.setAttribute("pitchModulationSensitivity", Integer.toString(this.pitchModulationSensitivity.value()));
 
-        element.appendChild(this.pitchEnvelope.toXMLNamed(document, "peg"));
+        element.appendChild(this.peg.toXMLNamed(document, "peg"));
         element.appendChild(this.lfo.toXMLNamed(document, "lfo"));
 
         Element operatorsElement = document.createElement("operators");
