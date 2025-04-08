@@ -41,7 +41,7 @@ public final class Cartridge {
 
     public static System.Logger logger = System.getLogger(LOGGER_NAME);
 
-    public static Cartridge parse(Document document) {
+    public static Cartridge parse(Document document) throws ParseException {
         Cartridge cartridge = new Cartridge();
 
         XPathFactory xpathfactory = XPathFactory.newInstance();
@@ -67,14 +67,13 @@ public final class Cartridge {
 
                 List<Operator> operators = new ArrayList<>();
 
-                for (int op = 0; op < Voice.OPERATOR_COUNT; op++) {
-                    String pathBase = String.format("//voice[%d]/operators/operator[%d]", i + 1, op + 1);
-                    StringBuffer pathBuffer = new StringBuffer(pathBase);
+                for (int x = 0; x < Voice.OPERATOR_COUNT; x++) {
+                    String pathBase = String.format("//voice[%d]/operators/operator[%d]", i + 1, x + 1);
+                    StringBuilder pathBuffer = new StringBuilder(pathBase);
 
                     logger.log(INFO, "path = " + pathBuffer.toString());
                     expr = xpath.compile(pathBuffer.toString());
                     Node opNode = (Node) expr.evaluate(document, XPathConstants.NODE);
-                    //System.out.println(opNode.getNodeName() + "" + (op + 1));
 
                     pathBuffer.append("/eg");
                     logger.log(INFO, "path = " + pathBuffer.toString());
@@ -92,7 +91,7 @@ public final class Cartridge {
                     expr = xpath.compile(pathBuffer.toString());
                     String egLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
 
-                    operators.add(getOperatorFromXml(opNode, egRatesText, egLevelsText));
+                    Operator op = getOperatorFromXml(opNode, egRatesText, egLevelsText);
 
                     pathBuffer.setLength(0);
                     pathBuffer.append(pathBase + "/keyboardLevelScaling");
@@ -110,6 +109,9 @@ public final class Cartridge {
                     logger.log(INFO, "path = " + pathBuffer.toString());
                     expr = xpath.compile(pathBuffer.toString());
                     Node curveNode = (Node) expr.evaluate(document, XPathConstants.NODE);
+
+                    op.keyboardLevelScaling = getKlsFromXml(klsNode, depthNode, curveNode);
+                    operators.add(op);
                 }
 
                 voice.setOperators(operators);
@@ -138,10 +140,55 @@ public final class Cartridge {
             }
 
         } catch (XPathExpressionException e) {
-            throw new RuntimeException(e);
+            throw new ParseException("Error parsing XML: " + e.getMessage());
         }
 
         return cartridge;
+    }
+
+    private static KeyboardLevelScaling getKlsFromXml(Node klsNode, Node depthNode, Node curveNode) {
+        KeyboardLevelScaling kls = new KeyboardLevelScaling();
+
+        NamedNodeMap attrs = klsNode.getAttributes();
+        kls.breakpoint = new Key(Integer.parseInt(attrs.getNamedItem("breakpoint").getNodeValue()));
+
+        attrs = depthNode.getAttributes();
+        Level leftDepth = new Level(Integer.parseInt(attrs.getNamedItem("left").getNodeValue()));
+        Level rightDepth = new Level(Integer.parseInt(attrs.getNamedItem("right").getNodeValue()));
+
+        attrs = curveNode.getAttributes();
+        String leftCurveValue = attrs.getNamedItem("left").getNodeValue();
+        KeyboardLevelScaling.Curve leftCurve = switch (leftCurveValue) {
+            case "-LIN" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.NEGATIVE);
+            case "+LIN" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.POSITIVE);
+            case "-EXP" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.EXPONENTIAL, KeyboardLevelScaling.Sign.NEGATIVE);
+            case "+EXP" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.EXPONENTIAL, KeyboardLevelScaling.Sign.POSITIVE);
+            default ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.NEGATIVE);
+        };
+
+        String rightCurveValue = attrs.getNamedItem("right").getNodeValue();
+        KeyboardLevelScaling.Curve rightCurve = switch (rightCurveValue) {
+            case "-LIN" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.NEGATIVE);
+            case "+LIN" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.POSITIVE);
+            case "-EXP" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.EXPONENTIAL, KeyboardLevelScaling.Sign.NEGATIVE);
+            case "+EXP" ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.EXPONENTIAL, KeyboardLevelScaling.Sign.POSITIVE);
+            default ->
+                    new KeyboardLevelScaling.Curve(KeyboardLevelScaling.Style.LINEAR, KeyboardLevelScaling.Sign.NEGATIVE);
+        };
+
+        kls.left = new KeyboardLevelScaling.Scaling(leftDepth, leftCurve);
+        kls.right = new KeyboardLevelScaling.Scaling(rightDepth, rightCurve);
+
+        return kls;
     }
 
     private static Operator getOperatorFromXml(Node opNode, String ratesText, String levelsText) {
@@ -149,7 +196,7 @@ public final class Cartridge {
 
         NamedNodeMap attrs = opNode.getAttributes();
         Node attrNode = attrs.getNamedItem("level");
-        op.outputLevel = new Level(Integer.parseInt(attrNode.getNodeValue()));
+        op.level = new Level(Integer.parseInt(attrNode.getNodeValue()));
 
         attrNode = attrs.getNamedItem("mode");
         if (attrNode.getNodeValue().equals("ratio")) {

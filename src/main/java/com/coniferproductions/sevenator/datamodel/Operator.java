@@ -18,7 +18,7 @@ public class Operator {
     public Depth keyboardRateScaling;
     public Sensitivity amplitudeModulationSensitivity;
     public Depth keyVelocitySensitivity;
-    public Level outputLevel;
+    public Level level;
     public Mode mode;
     public Coarse coarse;
     public Level fine;
@@ -43,7 +43,7 @@ public class Operator {
         op.keyboardRateScaling = keyboardRateScaling;
         op.amplitudeModulationSensitivity = ams;
         op.keyVelocitySensitivity = kvs;
-        op.outputLevel = level;
+        op.level = level;
         op.mode = mode;
         op.coarse = coarse;
         op.fine = fine;
@@ -114,7 +114,7 @@ public class Operator {
         result.add(new UInt8(this.keyboardRateScaling.value()));
         result.add(new UInt8(this.amplitudeModulationSensitivity.value()));
         result.add(new UInt8(this.keyVelocitySensitivity.value()));
-        result.add(new UInt8(this.outputLevel.value()));
+        result.add(new UInt8(this.level.value()));
         result.add(new UInt8(this.mode.ordinal()));
         result.add(new UInt8(this.coarse.value()));
         result.add(new UInt8(this.fine.value()));
@@ -128,7 +128,7 @@ public class Operator {
     public Element toXML(Document document) {
         Element element = document.createElement("operator");
 
-        element.setAttribute("level", Integer.toString(this.outputLevel.value()));
+        element.setAttribute("level", Integer.toString(this.level.value()));
         element.setAttribute("mode", this.mode.toString().toLowerCase());
         element.setAttribute("coarse", Integer.toString(this.coarse.value()));
         element.setAttribute("fine", Integer.toString(this.fine.value()));
