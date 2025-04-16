@@ -6,7 +6,6 @@ import com.coniferproductions.sevenator.datamodel.Octave;
 import com.coniferproductions.sevenator.datamodel.ParseException;
 import com.coniferproductions.sevenator.sysex.*;
 
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +18,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -31,11 +31,7 @@ import javafx.stage.Stage;
 import static java.lang.System.Logger.Level.*;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.ImageTranscoder;
 
-import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.w3c.dom.Document;
@@ -67,7 +63,6 @@ public class App extends Application {
         this.cartridge = new Cartridge();
 
         // Hard-code XML document load for testing
-        /*
         Path xmlFile = Paths.get(System.getProperty("user.home") + "/tmp/rom1a.xml");
         try {
             loadXmlDocument(xmlFile); // sets the cartridge from the parsed document
@@ -76,7 +71,6 @@ public class App extends Application {
         } catch (SAXException se) {
             logger.log(ERROR, "Error parsing XML: " + se.getMessage());
         }
-        */
 
         this.voiceNameList = FXCollections.observableArrayList();
         List<String> voiceNames = new ArrayList<>();
@@ -84,7 +78,7 @@ public class App extends Application {
             voiceNames.add(voice.name.toString());
         }
         voiceNameList.addAll(voiceNames);
-        this.listView = new ListView<String>(voiceNameList);
+        //this.listView = new ListView<String>(voiceNameList);
     }
 
     private void populateVoiceList() {
@@ -99,6 +93,23 @@ public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException, TranscoderException {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/app-view.fxml"));
+
+        this.voiceNameList = FXCollections.observableArrayList();
+        List<String> voiceNames = new ArrayList<>();
+        for (Voice voice : this.cartridge.voices) {
+            voiceNames.add(voice.name.toString());
+        }
+        this.voiceNameList.addAll(voiceNames);
+
+        populateVoiceList();
+
+        Scene scene = new Scene(fxmlLoader.load(), 1024, 768);
+        primaryStage.setTitle("Sevenator");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+
+        /*
         populateVoiceList();
 
         VBox vbox = new VBox(this.listView);
@@ -139,10 +150,10 @@ public class App extends Application {
         borderPane.setBottom(statusBar);
 
         Scene scene = new Scene(borderPane, 1024, 768);
-
         primaryStage.setTitle("Sevenator");
         primaryStage.setScene(scene);
         primaryStage.show();
+*/
     }
 
     String getFileExtension(String filename) {
@@ -431,35 +442,3 @@ public class App extends Application {
     }
 }
 
-class SVGConverter extends ImageTranscoder {
-    private BufferedImage image;
-
-    public SVGConverter(String svgFilePath) throws TranscoderException {
-        // Initialize the SVGConverter with the path to the SVG file
-        TranscoderInput input = new TranscoderInput(svgFilePath);
-        this.transcode(input, null);
-    }
-
-    public BufferedImage toBufferedImage() {
-        return this.image;
-    }
-
-    public Image toImage() {
-        // Convert the BufferedImage to a JavaFX Image
-        return SwingFXUtils.toFXImage(this.toBufferedImage(), null);
-    }
-
-    @Override
-    public BufferedImage createImage(int width, int height) {
-        // Create a new BufferedImage with the specified width and height
-        return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    }
-
-    @Override
-    public void writeImage(BufferedImage img, TranscoderOutput output) throws TranscoderException {
-        // Store the converted image in the 'image' variable
-        image = img;
-    }
-}
-
-// SVG stuff is adapted from https://coderscratchpad.com/displaying-svg-images-in-javafx/
