@@ -1,14 +1,8 @@
 package com.coniferproductions.sevenator.generators;
 
-import com.coniferproductions.sevenator.datamodel.Algorithm;
-import com.coniferproductions.sevenator.datamodel.Level;
-import com.coniferproductions.sevenator.datamodel.Operator;
-import com.coniferproductions.sevenator.datamodel.Voice;
+import com.coniferproductions.sevenator.datamodel.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Voice generator based on the Synthmata volca fm editor (https://synthmata.com/volca-fm/).
@@ -70,9 +64,9 @@ public class Synthmata implements Generator {
         int upper = (int) Math.min(
                 size - 1,
                 Math.floor(d) + r);
-        int index = Math.max(0, upper);
+        int algorithmIndex = Math.max(0, upper);
 
-        Algorithm algorithm = this.algorithmComplexityLookup.get(index);
+        Algorithm algorithm = this.algorithmComplexityLookup.get(algorithmIndex);
         voice.algorithm = algorithm;
 
         /*
@@ -81,10 +75,11 @@ public class Synthmata implements Generator {
         // carriers should be well audible
         // potential tweak would be to adjust things based on how many carriers there actually are?
         */
-        Set<Integer> carriers = algorithm.getCarriers();
-        List<Operator> operators = voice.getOperators();
-        for (Integer op : carriers) {
-            operators.get(op).level = new Level(getRandomNumber(90, 99));
+        Set<OperatorIndex> carriers = algorithm.getCarriers();
+        Map<OperatorIndex, Operator> operators = voice.getOperators();
+        for (OperatorIndex index : carriers) {
+            Operator op = operators.get(index);  // FIXME: why is this null?
+            op.level = new Level(getRandomNumber(90, 99));
         }
         voice.setOperators(operators);
 

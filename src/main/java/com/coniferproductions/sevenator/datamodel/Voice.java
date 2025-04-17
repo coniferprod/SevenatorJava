@@ -5,16 +5,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public final class Voice {
     public static final int DATA_SIZE = 155;
     public static final int PACKED_DATA_SIZE = 128;
     public static final int OPERATOR_COUNT = 6;
 
-    private List<Operator> operators;
+    private Map<OperatorIndex, Operator> operators;
+    //private List<Operator> operators;
     public Algorithm algorithm;
     public Depth feedback;
     public boolean oscSync;
@@ -24,20 +23,42 @@ public final class Voice {
     public Transpose transpose;
     public VoiceName name;
 
+    /*
     public List<Operator> getOperators() {
         return this.operators;
     }
+    */
 
+    public Map<OperatorIndex, Operator> getOperators() {
+        return this.operators;
+    }
+
+    /*
     public void setOperators(List<Operator> operators) {
         this.operators = operators;
     }
+    */
+
+    public void setOperators(Map<OperatorIndex, Operator> operators) {
+        this.operators = operators;
+    }
+
+    public void setOperator(OperatorIndex index, Operator operator) {
+        this.operators.put(index, operator);
+    }
 
     public Voice() {
-        this.operators = new ArrayList<>();
+        this.operators = new HashMap<>();
+        for (int index = OperatorIndex.TYPE.first(); index <= OperatorIndex.TYPE.last(); index++) {
+            this.operators.put(new OperatorIndex(index), new Operator());
+        }
 
+        /*
+        this.operators = new ArrayList<>();
         for (int i = 0; i < OPERATOR_COUNT; i++) {
             this.operators.add(new Operator());
         }
+        */
 
         this.algorithm = new Algorithm(32);
         this.feedback = new Depth(0);
@@ -187,12 +208,13 @@ public final class Voice {
 
         // Note that the operator data is in reverse order:
         // OP6 is first, OP1 is last.
-        Operator op6 = Operator.parse(data.subList(0, 21));
-        Operator op5 = Operator.parse(data.subList(21, 42));
-        Operator op4 = Operator.parse(data.subList(42, 63));
-        Operator op3 = Operator.parse(data.subList(63, 84));
-        Operator op2 = Operator.parse(data.subList(84, 105));
-        Operator op1 = Operator.parse(data.subList(105, 126));
+        Map<OperatorIndex, Operator> operators = new HashMap<>();
+        operators.put(new OperatorIndex(6), Operator.parse(data.subList(0, 21)));
+        operators.put(new OperatorIndex(5), Operator.parse(data.subList(21, 42)));
+        operators.put(new OperatorIndex(4), Operator.parse(data.subList(42, 63)));
+        operators.put(new OperatorIndex(3), Operator.parse(data.subList(63, 84)));
+        operators.put(new OperatorIndex(2), Operator.parse(data.subList(84, 105)));
+        operators.put(new OperatorIndex(1), Operator.parse(data.subList(105, 126)));
 
         Envelope peg = Envelope.parse(data.subList(126, 134));
 
@@ -216,7 +238,7 @@ public final class Voice {
         LFO lfo = LFO.parse(data.subList(137, 143));
 
         Voice voice = new Voice();
-        voice.operators = List.of(op1, op2, op3, op4, op5, op6);  // TODO: does this need to be mutable?
+        voice.operators = operators;
         voice.peg = peg;
         voice.algorithm = alg;
         voice.feedback = feedback;
@@ -246,8 +268,9 @@ public final class Voice {
         element.appendChild(this.lfo.toXMLNamed(document, "lfo"));
 
         Element operatorsElement = document.createElement("operators");
-        for (Operator operator : this.operators) {
-            operatorsElement.appendChild(operator.toXML(document));
+        List<OperatorIndex> operatorIndices = new ArrayList<>(operators.keySet());
+        for (OperatorIndex index : operatorIndices) {
+            operatorsElement.appendChild(this.operators.get(index).toXML(document));
         }
         element.appendChild(operatorsElement);
         return element;

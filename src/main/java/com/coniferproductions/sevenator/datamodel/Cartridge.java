@@ -12,7 +12,9 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.*;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.coniferproductions.sevenator.App.LOGGER_NAME;
 import static java.lang.System.Logger.Level.*;
@@ -56,10 +58,10 @@ public final class Cartridge {
             Object result = expr.evaluate(document, XPathConstants.NODESET);
             NodeList nodes = (NodeList) result;
 
-            for (int i = 0; i < nodes.getLength(); i++) {
+            for (int voiceIndex = 1; voiceIndex <= nodes.getLength(); voiceIndex++) {
                 Voice voice = new Voice();
 
-                Node voiceNode = nodes.item(i);
+                Node voiceNode = nodes.item(voiceIndex - 1);
                 NamedNodeMap voiceAttrs = voiceNode.getAttributes();
 
                 voice.name = new VoiceName(voiceAttrs.getNamedItem("name").getNodeValue());
@@ -69,10 +71,10 @@ public final class Cartridge {
                 voice.oscSync = Boolean.parseBoolean(voiceAttrs.getNamedItem("oscillatorSync").getNodeValue());
                 voice.pitchModulationSensitivity = new Depth(Integer.parseInt(voiceAttrs.getNamedItem("pitchModulationSensitivity").getNodeValue()));
 
-                List<Operator> operators = new ArrayList<>();
+                Map<OperatorIndex, Operator> operators = new HashMap<>();
 
-                for (int x = 0; x < Voice.OPERATOR_COUNT; x++) {
-                    String pathBase = String.format("//voice[%d]/operators/operator[%d]", i + 1, x + 1);
+                for (int index = OperatorIndex.TYPE.first(); index <= OperatorIndex.TYPE.last(); index++) {
+                    String pathBase = String.format("//voice[%d]/operators/operator[%d]", voiceIndex, index);
                     StringBuilder pathBuffer = new StringBuilder(pathBase);
 
                     logger.log(DEBUG, "path = " + pathBuffer);
@@ -115,28 +117,28 @@ public final class Cartridge {
                     Node curveNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
                     op.keyboardLevelScaling = getKlsFromXml(klsNode, depthNode, curveNode);
-                    operators.add(op);
+                    operators.put(new OperatorIndex(index), op);
                 }
 
                 voice.setOperators(operators);
 
-                String pathBase = String.format("//voice[%d]/peg", i + 1);
+                String pathBase = String.format("//voice[%d]/peg", voiceIndex);
                 StringBuffer pathBuffer = new StringBuffer(pathBase);
 
                 pathBuffer.append("/rates");
-                logger.log(DEBUG, "path = " + pathBuffer.toString());
+                logger.log(DEBUG, "path = " + pathBuffer);
                 expr = xpath.compile(pathBuffer.toString());
                 String pegRatesText = (String) expr.evaluate(document, XPathConstants.STRING);
 
                 pathBuffer.setLength(0);
                 pathBuffer.append(pathBase + "/levels");
-                logger.log(DEBUG, "path = " + pathBuffer.toString());
+                logger.log(DEBUG, "path = " + pathBuffer);
                 expr = xpath.compile(pathBuffer.toString());
                 String pegLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
 
                 voice.peg = getEgFromXml(pegRatesText, pegLevelsText);
 
-                expr = xpath.compile(String.format("//voice[%d]/lfo", (i + 1)));
+                expr = xpath.compile(String.format("//voice[%d]/lfo", voiceIndex));
                 Node lfoNode = (Node) expr.evaluate(document, XPathConstants.NODE);
                 voice.lfo = getLfoFromXml(lfoNode);
 
