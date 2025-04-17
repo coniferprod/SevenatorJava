@@ -13,7 +13,6 @@ public final class Voice {
     public static final int OPERATOR_COUNT = 6;
 
     private Map<OperatorIndex, Operator> operators;
-    //private List<Operator> operators;
     public Algorithm algorithm;
     public Depth feedback;
     public boolean oscSync;
@@ -23,42 +22,11 @@ public final class Voice {
     public Transpose transpose;
     public VoiceName name;
 
-    /*
-    public List<Operator> getOperators() {
-        return this.operators;
-    }
-    */
-
-    public Map<OperatorIndex, Operator> getOperators() {
-        return this.operators;
-    }
-
-    /*
-    public void setOperators(List<Operator> operators) {
-        this.operators = operators;
-    }
-    */
-
-    public void setOperators(Map<OperatorIndex, Operator> operators) {
-        this.operators = operators;
-    }
-
-    public void setOperator(OperatorIndex index, Operator operator) {
-        this.operators.put(index, operator);
-    }
-
     public Voice() {
         this.operators = new HashMap<>();
         for (int index = OperatorIndex.TYPE.first(); index <= OperatorIndex.TYPE.last(); index++) {
             this.operators.put(new OperatorIndex(index), new Operator());
         }
-
-        /*
-        this.operators = new ArrayList<>();
-        for (int i = 0; i < OPERATOR_COUNT; i++) {
-            this.operators.add(new Operator());
-        }
-        */
 
         this.algorithm = new Algorithm(32);
         this.feedback = new Depth(0);
@@ -68,6 +36,28 @@ public final class Voice {
         this.pitchModulationSensitivity = new Depth(0);
         this.transpose = new Transpose(0);
         this.name = new VoiceName("INIT VOICE");
+    }
+
+    public Map<OperatorIndex, Operator> getOperators() {
+        return this.operators;
+    }
+
+    public Operator getOperator(OperatorIndex index) {
+        if (this.operators.containsKey(index)) {
+            Operator op = this.operators.get(index);
+            return op;
+        } else {
+            System.err.println("WARNING: operator index " + index + " not found in map");
+            return null;
+        }
+    }
+
+    public void setOperators(Map<OperatorIndex, Operator> operators) {
+        this.operators = operators;
+    }
+
+    public void setOperator(OperatorIndex index, Operator operator) {
+        this.operators.put(index, operator);
     }
 
     public static List<UInt8> unpack(List<UInt8> data) {

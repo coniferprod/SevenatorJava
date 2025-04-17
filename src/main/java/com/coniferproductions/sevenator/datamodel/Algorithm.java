@@ -2,6 +2,7 @@ package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.RangedInteger;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -61,5 +62,48 @@ public final class Algorithm extends RangedInteger {
      */
     public Set<OperatorIndex> getCarriers() {
         return this.carrierLookup.get(this.value());
+    }
+
+    /* Original comment:
+        //  first gen modulators for our purpose are the first modulator fed into a carrier,
+        // where that modulator is the sole modulator for the carrier.
+     */
+    private Map<Integer, Set<OperatorIndex>> firstGenerationModulatorLookup = new HashMap<>() {{
+        put(1, Set.of(TWO, FOUR));
+        put(2, Set.of(TWO, FOUR));
+        put(3, Set.of(TWO, FIVE));
+        put(4, Set.of(TWO, FIVE));
+        put(5, Set.of(TWO, FOUR, SIX));
+        put(6, Set.of(TWO, FOUR, SIX));
+        put(7, Set.of(TWO));
+        put(8, Set.of(TWO));
+        put(9, Set.of(TWO));
+        put(10, Set.of(TWO));
+        put(11, Set.of(TWO));
+        put(12, Set.of(TWO));
+        put(13, Set.of(TWO));
+        put(14, Set.of(TWO, FOUR));
+        put(15, Set.of(TWO, FOUR));
+        put(16, Collections.<OperatorIndex>emptySet());
+        put(17, Collections.<OperatorIndex>emptySet());
+        put(18, Collections.<OperatorIndex>emptySet());
+        put(19, Set.of(TWO, SIX));
+        put(20, Set.of(THREE));
+        put(21, Set.of(THREE, SIX));
+        put(22, Set.of(TWO, SIX));
+        put(23, Set.of(THREE, SIX));
+        put(24, Set.of(SIX));
+        put(25, Set.of(SIX));
+        put(26, Set.of(THREE));
+        put(27, Set.of(THREE));
+        put(28, Set.of(TWO, FOUR));
+        put(29, Set.of(FOUR, SIX));
+        put(30, Set.of(FOUR));
+        put(31, Set.of(SIX));
+        put(32, Collections.<OperatorIndex>emptySet());
+    }};
+
+    public Set<OperatorIndex> getFirstGenerationModulators() {
+        return this.firstGenerationModulatorLookup.get(this.value());
     }
 }

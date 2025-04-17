@@ -60,7 +60,7 @@ public class Synthmata implements Generator {
         int size = this.algorithmComplexityLookup.size();
 
         double d = size / 100.0 * this.complexity.value();
-        int r = this.getRandomNumber(-size / 8, size /8);
+        int r = this.getRandomNumber(-size / 8, size / 8);
         int upper = (int) Math.min(
                 size - 1,
                 Math.floor(d) + r);
@@ -76,13 +76,33 @@ public class Synthmata implements Generator {
         // potential tweak would be to adjust things based on how many carriers there actually are?
         */
         Set<OperatorIndex> carriers = algorithm.getCarriers();
-        Map<OperatorIndex, Operator> operators = voice.getOperators();
         for (OperatorIndex index : carriers) {
-            Operator op = operators.get(index);  // FIXME: why is this null?
+            Operator op = voice.getOperator(index);
             op.level = new Level(getRandomNumber(90, 99));
         }
-        voice.setOperators(operators);
 
+        /* Original comment:
+        // modulators are governed by a few things ideally long-term, but to begin with, it's just brightness.
+        // 1st gen modulators need to be scaled up so that they have an audible effect, the others we just set
+        // based on the randomness...
+        */
+        for (int index = OperatorIndex.TYPE.first(); index <= OperatorIndex.TYPE.first(); index++) {
+            OperatorIndex operatorIndex = new OperatorIndex(index);
+            if (carriers.contains(operatorIndex)) {
+                continue;
+            }
+
+            if (algorithm.getFirstGenerationModulators().contains(operatorIndex)) {
+                Operator op = voice.getOperator(operatorIndex);
+                op.level = new Level(Math.max(0,
+                                 (int) Math.min(100, (50 / 100.0 * this.brightness.value())) + getRandomNumber(-10, 10) + 50));
+            } else {
+                Operator op = voice.getOperator(operatorIndex);
+                op.level = new Level(Math.max(0,
+                        this.brightness.value()) + getRandomNumber(-10, 10));
+            }
+        }
+        
         return voice;
     }
 }

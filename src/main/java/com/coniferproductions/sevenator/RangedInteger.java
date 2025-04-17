@@ -1,5 +1,7 @@
 package com.coniferproductions.sevenator;
 
+import java.util.Objects;
+
 /**
  * Abstract base class for an integer that conforms to a closed range.
  */
@@ -106,6 +108,11 @@ public abstract class RangedInteger {
 
         // We only care about the wrapped value, not the bounds
         return this.value == that.value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.value);
     }
 
     private static int count;
