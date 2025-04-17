@@ -24,6 +24,19 @@ public class Operator {
     public Level fine;
     public Detune detune;
 
+    public Operator() {
+        this.eg = new Envelope();
+        this.keyboardLevelScaling = new KeyboardLevelScaling();
+        this.keyboardRateScaling = new Depth();
+        this.amplitudeModulationSensitivity = new Sensitivity();
+        this.keyVelocitySensitivity = new Depth();
+        this.level = new Level();
+        this.mode = Mode.RATIO;
+        this.coarse = new Coarse();
+        this.fine = new Level();
+        this.detune = new Detune();
+    }
+
     public static Operator parse(List<UInt8> data) throws ParseException {
         //System.out.print("OP data = "); UInt8.printList(data);
         Envelope eg = Envelope.parse(data.subList(0, 8));

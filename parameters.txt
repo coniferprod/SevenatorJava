@@ -1,0 +1,10 @@
+atonality 50
+complexity 50
+brightness 50
+hardness 50
+hitness 50
+twang 50
+longness 50
+wobble 50
+wubble 50
+velocity 50

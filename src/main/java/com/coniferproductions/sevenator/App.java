@@ -3,40 +3,18 @@ package com.coniferproductions.sevenator;
 import com.coniferproductions.sevenator.commands.Dump;
 import com.coniferproductions.sevenator.commands.Export;
 import com.coniferproductions.sevenator.commands.Import;
+import com.coniferproductions.sevenator.commands.Generate;
 import com.coniferproductions.sevenator.datamodel.Cartridge;
-import com.coniferproductions.sevenator.datamodel.ParseException;
 import com.coniferproductions.sevenator.sysex.*;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.ArrayList;
-
-import static java.lang.System.Logger.Level.*;
-
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.SchemaFactoryConfigurationError;
-import javax.xml.validation.Validator;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "sevenator", subcommands = { Dump.class, Export.class, Import.class }, description = "Manages Yamaha DX7 cartridges")
+@Command(name = "sevenator", subcommands = { Dump.class, Export.class, Import.class, Generate.class }, description = "Manages Yamaha DX7 cartridges")
 public class App {
     public static final String LOGGER_NAME = "com.coniferproductions.sevenator";
     private static System.Logger logger = System.getLogger(LOGGER_NAME);
