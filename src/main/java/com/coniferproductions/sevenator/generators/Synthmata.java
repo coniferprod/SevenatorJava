@@ -79,6 +79,13 @@ public class Synthmata implements Generator {
         for (OperatorIndex index : carriers) {
             Operator op = voice.getOperator(index);
             op.level = new Level(getRandomNumber(90, 99));
+
+            /* Original comment:
+            // tuning then. carriers we'll keep between 0 and 2 on coarse I think, because otherwise the range gets away from you a bit
+            */
+            op.coarse = new Coarse(getRandomNumber(0, 3));
+
+
         }
 
         /* Original comment:
@@ -102,7 +109,7 @@ public class Synthmata implements Generator {
                         this.brightness.value()) + getRandomNumber(-10, 10));
             }
         }
-        
+
         return voice;
     }
 }
