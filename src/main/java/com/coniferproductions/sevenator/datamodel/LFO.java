@@ -93,7 +93,12 @@ public class LFO {
         element.setAttribute("pmd", Integer.toString(this.pmd.value()));
         element.setAttribute("amd", Integer.toString(this.amd.value()));
         element.setAttribute("sync", Boolean.toString(this.sync));
-        element.setAttribute("wave", this.waveform.toString().toLowerCase());
+
+        // Replace underscore with dash to conform with the XML Schema for voice
+        String waveformString = this.waveform.toString()
+                .toLowerCase()
+                .replace('_', '-');
+        element.setAttribute("wave", waveformString);
 
         return element;
     }

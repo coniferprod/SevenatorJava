@@ -39,10 +39,14 @@ public final class Cartridge {
         }
     }
 
+    public Cartridge(List<Voice> voices) {
+        this.voices = voices;
+    }
+
     public static System.Logger logger = System.getLogger(LOGGER_NAME);
 
     public static Cartridge parse(Document document) throws ParseException {
-        Cartridge cartridge = new Cartridge();
+        List<Voice> voices = new ArrayList<>();
 
         XPathFactory xpathfactory = XPathFactory.newInstance();
         XPath xpath = xpathfactory.newXPath();
@@ -71,23 +75,23 @@ public final class Cartridge {
                     String pathBase = String.format("//voice[%d]/operators/operator[%d]", i + 1, x + 1);
                     StringBuilder pathBuffer = new StringBuilder(pathBase);
 
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     Node opNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
                     pathBuffer.append("/eg");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     Node egNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
                     pathBuffer.append("/rates/text()");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     String egRatesText = (String) expr.evaluate(document, XPathConstants.STRING);
 
                     pathBuffer.setLength(0);
                     pathBuffer.append(pathBase + "/eg/levels/text()");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     String egLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
 
@@ -95,18 +99,18 @@ public final class Cartridge {
 
                     pathBuffer.setLength(0);
                     pathBuffer.append(pathBase + "/keyboardLevelScaling");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     Node klsNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
                     pathBuffer.append("/depth");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     Node depthNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
                     pathBuffer.setLength(0);
                     pathBuffer.append(pathBase + "/keyboardLevelScaling/curve");
-                    logger.log(INFO, "path = " + pathBuffer.toString());
+                    logger.log(DEBUG, "path = " + pathBuffer);
                     expr = xpath.compile(pathBuffer.toString());
                     Node curveNode = (Node) expr.evaluate(document, XPathConstants.NODE);
 
@@ -120,13 +124,13 @@ public final class Cartridge {
                 StringBuffer pathBuffer = new StringBuffer(pathBase);
 
                 pathBuffer.append("/rates");
-                logger.log(INFO, "path = " + pathBuffer.toString());
+                logger.log(DEBUG, "path = " + pathBuffer.toString());
                 expr = xpath.compile(pathBuffer.toString());
                 String pegRatesText = (String) expr.evaluate(document, XPathConstants.STRING);
 
                 pathBuffer.setLength(0);
                 pathBuffer.append(pathBase + "/levels");
-                logger.log(INFO, "path = " + pathBuffer.toString());
+                logger.log(DEBUG, "path = " + pathBuffer.toString());
                 expr = xpath.compile(pathBuffer.toString());
                 String pegLevelsText = (String) expr.evaluate(document, XPathConstants.STRING);
 
@@ -136,14 +140,14 @@ public final class Cartridge {
                 Node lfoNode = (Node) expr.evaluate(document, XPathConstants.NODE);
                 voice.lfo = getLfoFromXml(lfoNode);
 
-                cartridge.voices.add(voice);
+                voices.add(voice);
             }
 
         } catch (XPathExpressionException e) {
             throw new ParseException("Error parsing XML: " + e.getMessage());
         }
 
-        return cartridge;
+        return new Cartridge(voices);
     }
 
     private static KeyboardLevelScaling getKlsFromXml(Node klsNode, Node depthNode, Node curveNode) {
@@ -228,21 +232,20 @@ public final class Cartridge {
     }
 
     private static Envelope getEgFromXml(String ratesText, String levelsText) {
-        Envelope eg = new Envelope();
 
-        //String ratesValue = rates.getNodeValue();
         String[] parts = ratesText.split(" ");
+        List<Rate> rates = new ArrayList<>();
         for (int i = 0; i < parts.length; i++) {
-            eg.rates.add(new Rate(Integer.parseInt(parts[i])));
+            rates.add(new Rate(Integer.parseInt(parts[i])));
         }
 
-        //String levelsValue = levels.getNodeValue();
         parts = levelsText.split(" ");
+        List<Level> levels = new ArrayList<>();
         for (int i = 0; i < parts.length; i++) {
-            eg.levels.add(new Level(Integer.parseInt(parts[i])));
+            levels.add(new Level(Integer.parseInt(parts[i])));
         }
 
-        return eg;
+        return new Envelope(rates, levels);
     }
 
     private static LFO getLfoFromXml(Node node) {

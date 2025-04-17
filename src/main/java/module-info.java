@@ -1,10 +1,8 @@
 module sevenator {
     requires java.sql;
-    requires transitive javafx.controls;
-    requires transitive javafx.fxml;
     requires batik.all;
-    requires javafx.swing;
+    requires info.picocli;
 
-    opens com.coniferproductions.sevenator to javafx.fxml;
     exports com.coniferproductions.sevenator;
+    opens com.coniferproductions.sevenator.commands to info.picocli;
 }

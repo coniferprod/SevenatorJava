@@ -78,6 +78,14 @@ public class Header {
         return header;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(String.format("Header[channel=%d,format=%s]", this.channel.value(), this.format.toString()));
+
+        return sb.toString();
+    }
     public Format getFormat() {
         return this.format;
     }
