@@ -1,10 +1,13 @@
 package com.coniferproductions.sevenator.datamodel;
 
+import com.coniferproductions.sevenator.RangedInteger;
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LFO {
@@ -14,7 +17,28 @@ public class LFO {
         SAW_UP,
         SQUARE,
         SINE,
-        SAMPLE_AND_HOLD,
+        SAMPLE_AND_HOLD;
+
+        // Original comment:
+        /* // sample/hold not included because i think it's broken on the volca */
+        // 0, 4, 3, 1, 2
+        public static Waveform byComplexity(Level complexity) {
+            List<Waveform> lookup = List.of(
+                    Waveform.TRIANGLE,
+                    Waveform.SINE,
+                    Waveform.SQUARE,
+                    Waveform.SAW_DOWN,
+                    Waveform.SAW_UP,
+                    Waveform.SAMPLE_AND_HOLD);  // we do include S&H
+
+            // LFO_SHAPE_COMPLEXITY[Math.floor(randomInt(0, complexity) / LFO_SHAPE_COMPLEXITY.length)];
+            //int c = RangedInteger.getRandomInteger(0, complexity.value());
+            //int index = (int)(Math.floor((double) c / lookup.size())) - 1;
+            // OK, that didn't work.
+            // Just divide the complexity into as many parts as there are waveforms:
+            int numParts = complexity.value() / lookup.size();
+            return Arrays.asList(Waveform.values()).get(numParts % lookup.size());
+        }
     };
 
     public Level speed;
@@ -33,7 +57,7 @@ public class LFO {
         this.waveform = Waveform.TRIANGLE;
     }
 
-    public static LFO parse(List<UInt8> data) throws ParseException {
+    public static LFO parse(List<UInt7> data) throws ParseException {
         Level speed = new Level(data.get(0).value());
         Level delay = new Level(data.get(1).value());
         Level pmd = new Level(data.get(2).value());
@@ -59,28 +83,28 @@ public class LFO {
         return lfo;
     }
 
-    public static List<UInt8> unpack(List<UInt8> data) {
-        List<UInt8> result = new ArrayList<>();
+    public static List<UInt7> unpack(List<UInt7> data) {
+        List<UInt7> result = new ArrayList<>();
 
         result.add(data.get(0));  // LFO speed
         result.add(data.get(1));  // LFO delay
         result.add(data.get(2));  // LFO PMD
         result.add(data.get(3));  // data[3],  // LFO AMD
-        result.add(data.get(4).getBit(0) ? UInt8.ONE : UInt8.ZERO);  // LFO sync
-        result.add(new UInt8(data.get(4).getRange(1, 3))); // LFO waveform
+        result.add(data.get(4).getBit(0) ? UInt7.ONE : UInt7.ZERO);  // LFO sync
+        result.add(new UInt7(data.get(4).getRange(1, 3))); // LFO waveform
 
         return result;
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
-        result.add(new UInt8(this.speed.value()));
-        result.add(new UInt8(this.delay.value()));
-        result.add(new UInt8(this.pmd.value()));
-        result.add(new UInt8(this.amd.value()));
-        result.add(this.sync ? UInt8.ONE : UInt8.ZERO);
-        result.add(new UInt8(this.waveform.ordinal()));
+        result.add(new UInt7(this.speed.value()));
+        result.add(new UInt7(this.delay.value()));
+        result.add(new UInt7(this.pmd.value()));
+        result.add(new UInt7(this.amd.value()));
+        result.add(this.sync ? UInt7.ONE : UInt7.ZERO);
+        result.add(new UInt7(this.waveform.ordinal()));
 
         return result;
     }

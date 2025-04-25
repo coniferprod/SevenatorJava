@@ -1,31 +1,47 @@
 package com.coniferproductions.sevenator.commands;
 
-import com.coniferproductions.sevenator.datamodel.Cartridge;
-import com.coniferproductions.sevenator.datamodel.Operator;
-import com.coniferproductions.sevenator.datamodel.OperatorIndex;
-import com.coniferproductions.sevenator.datamodel.Voice;
+import com.coniferproductions.sevenator.datamodel.*;
 import com.coniferproductions.sevenator.generators.Generator;
 import com.coniferproductions.sevenator.generators.Synthmata;
 import com.coniferproductions.sevenator.sysex.Loader;
 import picocli.CommandLine;
 
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @CommandLine.Command(name = "generate")
 public class Generate implements Runnable {
+    @CommandLine.Parameters(arity = "1", paramLabel = "OUTPUTFILE")
+    Path outputFile;
+
     @Override
     public void run() {
-        Generator g = new Synthmata();
-        Voice voice = g.makeRandomVoice();
-        System.out.println("algorithm = " + voice.algorithm.value());
-        Map<OperatorIndex, Operator> operators = voice.getOperators();
-        List<OperatorIndex> operatorIndices = new ArrayList<>(operators.keySet());
-        for (OperatorIndex index : operatorIndices) {
-            Operator op = operators.get(index);
-            System.out.println("op " + index.value() + " level = " + op.level.value());
+        Generator gen = new Synthmata();
+
+        Cartridge cartridge = new Cartridge();
+        for (int i = 0; i < Cartridge.VOICE_COUNT; i++) {
+            Voice voice = gen.makeRandomVoice();
+            voice.name = new VoiceName(VoiceName.makeRandomPhrase(5).toUpperCase());
+            cartridge.voices.set(i, voice);
+        }
+
+        String xml = cartridge.toXML();
+
+        try {
+            BufferedWriter writer = new BufferedWriter(
+                    new FileWriter(outputFile.toString()));
+            writer.write(xml);
+            writer.close();
+        } catch (FileNotFoundException fnfe) {
+            System.err.println("Error writing XML to file: " + fnfe.getLocalizedMessage());
+        } catch (IOException ioe) {
+            System.err.println("Error writing XML to file: " + ioe.getLocalizedMessage());
         }
     }
-
 }

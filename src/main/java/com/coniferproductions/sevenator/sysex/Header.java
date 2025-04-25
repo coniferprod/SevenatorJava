@@ -45,17 +45,17 @@ public class Header {
         };
     }
 
-    public static Header parse(List<UInt8> data) {
-        UInt8 byteCountMSB = data.get(2);
-        UInt8 byteCountLSB = data.get(3);
-        UInt8 channelByte = new UInt8(data.get(0).value() & 0b00001111);
+    public static Header parse(List<UInt7> data) {
+        UInt7 byteCountMSB = data.get(2);
+        UInt7 byteCountLSB = data.get(3);
+        UInt7 channelByte = new UInt7(data.get(0).value() & 0b00001111);
         if (!Channel.TYPE.contains(channelByte.value() + 1)) {
             throw new IllegalArgumentException("MIDI channel must be 1...16");
         }
 
         Header header = new Header();
 
-        UInt8 formatByte = data.get(1);
+        UInt7 formatByte = data.get(1);
         if (formatByte.value() == 0) {
             header.format = Format.VOICE;
         } else if (formatByte.value() == 9) {
@@ -100,19 +100,19 @@ public class Header {
 
     public int getDataSize() { return 4; }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
-        result.add(new UInt8(this.channel.value() - 1));  // adjust to 0...15
-        result.add(new UInt8(this.format.format()));
+        result.add(new UInt7(this.channel.value() - 1));  // adjust to 0...15
+        result.add(new UInt7(this.format.format()));
         switch (this.format) {
             case VOICE:
-                result.add(new UInt8(0x01));
-                result.add(new UInt8(0x1B));
+                result.add(new UInt7(0x01));
+                result.add(new UInt7(0x1B));
                 break;
             case CARTRIDGE:
-                result.add(new UInt8(0x20));
-                result.add(new UInt8(0x00));
+                result.add(new UInt7(0x20));
+                result.add(new UInt7(0x00));
                 break;
         }
 

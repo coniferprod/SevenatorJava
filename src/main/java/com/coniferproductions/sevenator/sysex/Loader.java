@@ -80,12 +80,12 @@ public class Loader {
         logger.log(DEBUG, header);
         System.out.println("header = " + header);
 
-        List<UInt8> payload = message.getPayload();
+        List<UInt7> payload = message.getPayload();
         System.out.println("payload size = " + payload.size());
         int dataStart = header.getDataSize();
         int dataEnd = payload.size() - 1;
         System.out.println("cartridge data is " + dataStart + " .. " + dataEnd);
-        List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
+        List<UInt7> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
         System.out.println("cartridge data size = " + cartridgeData.size());
 
         return Cartridge.parse(cartridgeData);

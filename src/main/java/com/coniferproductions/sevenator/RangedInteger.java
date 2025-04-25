@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator;
 
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * Abstract base class for an integer that conforms to a closed range.
@@ -117,4 +118,20 @@ public abstract class RangedInteger {
 
     private static int count;
     public static int getCount() { return count; }
+
+    /**
+     * Generate a random integer in the range [min, max) (max is excluded).
+     *
+     * @param min the minimum value
+     * @param max the maximum value (excsluded)
+     * @return the random integer
+     */
+    public static int getRandomInteger(int min, int max) {
+        Random random = new Random();
+        return random.nextInt(max - min) + min;
+    }
+
+    public int getRandomValue() {
+        return RangedInteger.getRandomInteger(this.first(), this.last());
+    }
 }

@@ -10,18 +10,18 @@ public class Message {
     public static UInt8 SYSEX_TERMINATOR = new UInt8(0xf7);
 
     private Manufacturer manufacturer;
-    private List<UInt8> payload;
+    private List<UInt7> payload;
 
     public Message(Manufacturer manufacturer, byte[] payload) {
         this.manufacturer = manufacturer;
 
         this.payload = new ArrayList<>();
         for (byte b : payload) {
-            this.payload.add(new UInt8(b));
+            this.payload.add(new UInt7(b));
         }
     }
 
-    public Message(Manufacturer manufacturer, List<UInt8> payload) {
+    public Message(Manufacturer manufacturer, List<UInt7> payload) {
         this.manufacturer = manufacturer;
         this.payload = payload;
     }
@@ -55,7 +55,7 @@ public class Message {
         return this.manufacturer;
     }
 
-    public List<UInt8> getPayload() {
+    public List<UInt7> getPayload() {
         return this.payload;
     }
 
@@ -64,7 +64,7 @@ public class Message {
 
         result.add(SYSEX_INITIATOR);
         result.addAll(this.manufacturer.toData());
-        result.addAll(this.payload);
+        result.addAll(UInt7.toData(this.payload));
         result.add(SYSEX_TERMINATOR);
         return result;
     }

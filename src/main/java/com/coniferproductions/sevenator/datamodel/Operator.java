@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -37,7 +38,7 @@ public class Operator {
         this.detune = new Detune();
     }
 
-    public static Operator parse(List<UInt8> data) throws ParseException {
+    public static Operator parse(List<UInt7> data) throws ParseException {
         //System.out.print("OP data = "); UInt8.printList(data);
         Envelope eg = Envelope.parse(data.subList(0, 8));
         KeyboardLevelScaling kls = KeyboardLevelScaling.parse(data.subList(8, 13));
@@ -65,8 +66,8 @@ public class Operator {
         return op;
     }
 
-    public static List<UInt8> pack(List<UInt8> data) {
-        List<UInt8> result = new ArrayList<>();
+    public static List<UInt7> pack(List<UInt7> data) {
+        List<UInt7> result = new ArrayList<>();
 
         int offset = 0;
 
@@ -78,11 +79,11 @@ public class Operator {
         result.add(data.get(9));
         result.add(data.get(10));
 
-        result.add(new UInt8(data.get(11).value() | (data.get(12).value() << 2)));
-        result.add(new UInt8(data.get(13).value() | (data.get(20).value() << 3)));
-        result.add(new UInt8(data.get(14).value() | (data.get(15).value() << 2)));
+        result.add(new UInt7(data.get(11).value() | (data.get(12).value() << 2)));
+        result.add(new UInt7(data.get(13).value() | (data.get(20).value() << 3)));
+        result.add(new UInt7(data.get(14).value() | (data.get(15).value() << 2)));
         result.add(data.get(16));
-        result.add(new UInt8(data.get(17).value() | (data.get(18).value()) << 1));  // coarse + mode
+        result.add(new UInt7(data.get(17).value() | (data.get(18).value()) << 1));  // coarse + mode
         result.add(data.get(19));  // fine
 
         assert result.size() == 17;
@@ -90,8 +91,8 @@ public class Operator {
         return result;
     }
 
-    public static List<UInt8> unpack(List<UInt8> data) {
-        List<UInt8> result = new ArrayList<>();
+    public static List<UInt7> unpack(List<UInt7> data) {
+        List<UInt7> result = new ArrayList<>();
 
         // EG data is unpacked
         result.addAll(data.subList(0, 8));
@@ -101,37 +102,37 @@ public class Operator {
         result.add(data.get(9));  // LD
         result.add(data.get(10)); // RD
 
-        result.add(new UInt8(data.get(11).getRange(0, 2)));  // LC
-        result.add(new UInt8(data.get(11).getRange(2, 2)));  // RC
+        result.add(new UInt7(data.get(11).getRange(0, 2)));  // LC
+        result.add(new UInt7(data.get(11).getRange(2, 2)));  // RC
 
-        result.add(new UInt8(data.get(12).getRange(0, 3)));  // RS
-        result.add(new UInt8(data.get(13).getRange(0, 2)));  // AMS
-        result.add(new UInt8(data.get(13).getRange(2, 3)));  // KVS
+        result.add(new UInt7(data.get(12).getRange(0, 3)));  // RS
+        result.add(new UInt7(data.get(13).getRange(0, 2)));  // AMS
+        result.add(new UInt7(data.get(13).getRange(2, 3)));  // KVS
 
-        result.add(new UInt8(data.get(14).value()));  // output level
+        result.add(new UInt7(data.get(14).value()));  // output level
 
-        result.add(data.get(15).getBit(0) ? UInt8.ONE : UInt8.ZERO);  // osc mode
+        result.add(data.get(15).getBit(0) ? UInt7.ONE : UInt7.ZERO);  // osc mode
 
-        result.add(new UInt8(data.get(15).getRange(1, 5))); // coarse
-        result.add(new UInt8(data.get(16).value())); // fine
-        result.add(new UInt8(data.get(12).getRange(3, 4)));  // detune
+        result.add(new UInt7(data.get(15).getRange(1, 5))); // coarse
+        result.add(new UInt7(data.get(16).value())); // fine
+        result.add(new UInt7(data.get(12).getRange(3, 4)));  // detune
 
         return result;
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
         result.addAll(this.eg.toData());
         result.addAll(this.keyboardLevelScaling.toData());
-        result.add(new UInt8(this.keyboardRateScaling.value()));
-        result.add(new UInt8(this.amplitudeModulationSensitivity.value()));
-        result.add(new UInt8(this.keyVelocitySensitivity.value()));
-        result.add(new UInt8(this.level.value()));
-        result.add(new UInt8(this.mode.ordinal()));
-        result.add(new UInt8(this.coarse.value()));
-        result.add(new UInt8(this.fine.value()));
-        result.add(new UInt8(this.detune.value() + 7)); // detune -7...+7 to 0...14
+        result.add(new UInt7(this.keyboardRateScaling.value()));
+        result.add(new UInt7(this.amplitudeModulationSensitivity.value()));
+        result.add(new UInt7(this.keyVelocitySensitivity.value()));
+        result.add(new UInt7(this.level.value()));
+        result.add(new UInt7(this.mode.ordinal()));
+        result.add(new UInt7(this.coarse.value()));
+        result.add(new UInt7(this.fine.value()));
+        result.add(new UInt7(this.detune.value() + 7)); // detune -7...+7 to 0...14
 
         assert result.size() == 21;
 

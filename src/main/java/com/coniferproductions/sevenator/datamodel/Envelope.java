@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -34,15 +35,15 @@ public final class Envelope {
         this.levels = levels;
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
         for (int i = 0; i < 4; i++) {
-            result.add(new UInt8(this.rates.get(i).value()));
+            result.add(new UInt7(this.rates.get(i).value()));
         }
 
         for (int i = 0; i < 4; i++) {
-            result.add(new UInt8(this.levels.get(i).value()));
+            result.add(new UInt7(this.levels.get(i).value()));
         }
 
         return result;
@@ -64,7 +65,7 @@ public final class Envelope {
                 List.of(new Level(99), new Level(99), sustain, new Level(0)));
     }
 
-    public static Envelope parse(List<UInt8> data) throws ParseException {
+    public static Envelope parse(List<UInt7> data) throws ParseException {
         List<Rate> rates = List.of(
                 new Rate(data.get(0).value()),
                 new Rate(data.get(1).value()),

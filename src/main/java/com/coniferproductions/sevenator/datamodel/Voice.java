@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -32,7 +33,11 @@ public final class Voice {
         this.feedback = new Depth(0);
         this.oscSync = false;
         this.lfo = new LFO();
-        this.peg = new Envelope();
+
+        List<Rate> rates = List.of(new Rate(0), new Rate(0), new Rate(0), new Rate(0));
+        List<Level> levels = List.of(new Level(50), new Level(50), new Level(50), new Level(50));
+        this.peg = new Envelope(rates, levels);
+
         this.pitchModulationSensitivity = new Depth(0);
         this.transpose = new Transpose(0);
         this.name = new VoiceName("INIT VOICE");
@@ -60,10 +65,10 @@ public final class Voice {
         this.operators.put(index, operator);
     }
 
-    public static List<UInt8> unpack(List<UInt8> data) {
+    public static List<UInt7> unpack(List<UInt7> data) {
         //System.out.print("packed voice data (" + data.size() + ") = "); UInt8.printList(data);
 
-        List<UInt8> result = new ArrayList<>();
+        List<UInt7> result = new ArrayList<>();
 
         int offset = 0;
         for (int i = 5; i >= 0; i--) {  // NOTE: reverse order!
@@ -80,18 +85,18 @@ public final class Voice {
 
         // Algorithm
         assert offset == 110;
-        UInt8 alg = data.get(offset);
+        UInt7 alg = data.get(offset);
         result.add(alg);
         offset += 1;
 
-        UInt8 feedback = new UInt8(data.get(offset).getRange(0, 3));
+        UInt7 feedback = new UInt7(data.get(offset).getRange(0, 3));
         result.add(feedback); // feedback
-        result.add(data.get(offset).getBit(3) ? UInt8.ONE : UInt8.ZERO); // osc sync
+        result.add(data.get(offset).getBit(3) ? UInt7.ONE : UInt7.ZERO); // osc sync
         offset += 1;
 
         result.addAll(LFO.unpack(data.subList(offset, offset + 5)));
         offset += 4;  // we'll use the last byte soon
-        result.add(new UInt8(data.get(offset).getRange(4, 3)));  // pitch mod sens
+        result.add(new UInt7(data.get(offset).getRange(4, 3)));  // pitch mod sens
         offset += 1;
 
         result.add(data.get(offset)); // transpose
@@ -106,8 +111,8 @@ public final class Voice {
         return result;
     }
 
-    public static List<UInt8> pack(List<UInt8> data) {
-        List<UInt8> result = new ArrayList<>();
+    public static List<UInt7> pack(List<UInt7> data) {
+        List<UInt7> result = new ArrayList<>();
 
         int offset = 0;
 
@@ -131,7 +136,7 @@ public final class Voice {
         result.add(data.get(offset));  // algorithm
         offset += 1;
 
-        var byte111 = new UInt8(data.get(offset).value() // feedback
+        var byte111 = new UInt7(data.get(offset).value() // feedback
                 | (data.get(offset + 1).value() << 3));  // osc sync
         result.add(byte111);
         offset += 2;
@@ -152,7 +157,7 @@ public final class Voice {
         //byte116.set_bit_range(5..7, data[offset + 2]);
 
         //println!("byte116 = {:#04x}", byte116);
-        result.add(new UInt8(byte116Value));
+        result.add(new UInt7(byte116Value));
         offset += 3;
 
         result.add(data.get(offset));  // transpose
@@ -165,8 +170,8 @@ public final class Voice {
         return result;
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
         for (int i = 5; i >= 0; i--) { // NOTE: reverse order!
             result.addAll(this.operators.get(i).toData());
@@ -174,17 +179,17 @@ public final class Voice {
 
         result.addAll(this.peg.toData());
 
-        result.add(new UInt8(this.algorithm.value() - 1));  // adjust to 0...31
-        result.add(new UInt8(this.feedback.value()));
-        result.add(this.oscSync ? UInt8.ONE : UInt8.ZERO);
+        result.add(new UInt7(this.algorithm.value() - 1));  // adjust to 0...31
+        result.add(new UInt7(this.feedback.value()));
+        result.add(this.oscSync ? UInt7.ONE : UInt7.ZERO);
         result.addAll(this.lfo.toData());
-        result.add(new UInt8(this.pitchModulationSensitivity.value()));
-        result.add(new UInt8(this.transpose.value() * 12 + 24));  // adjust -2...+2 to 0...48
+        result.add(new UInt7(this.pitchModulationSensitivity.value()));
+        result.add(new UInt7(this.transpose.value() * 12 + 24));  // adjust -2...+2 to 0...48
 
         byte[] nameBytes = this.name.toString().getBytes(StandardCharsets.US_ASCII);
-        List<UInt8> nameData = new ArrayList<>();
+        List<UInt7> nameData = new ArrayList<>();
         for (int i = 0; i < nameBytes.length; i++) {
-            nameData.add(new UInt8(nameBytes[i]));
+            nameData.add(new UInt7(nameBytes[i]));
         }
         result.addAll(nameData);
 
@@ -193,7 +198,7 @@ public final class Voice {
         return result;
     }
 
-    public static Voice parse(List<UInt8> data) throws ParseException {
+    public static Voice parse(List<UInt7> data) throws ParseException {
         //System.out.print(" (" + data.size() + "): "); UInt8.printList(data);
 
         // Note that the operator data is in reverse order:
@@ -215,10 +220,10 @@ public final class Voice {
         // number of octaves to transpose (-2...+2) (12 = C2, value is 0...48 in SysEx)
         Transpose transpose = new Transpose((data.get(144).value() - 24) / 12);
 
-        List<UInt8> nameData = data.subList(145, 155);
+        List<UInt7> nameData = data.subList(145, 155);
         byte[] nameBytes = new byte[nameData.size()];
         int i = 0;
-        for (UInt8 b : nameData) {
+        for (UInt7 b : nameData) {
             nameBytes[i] = (byte) b.value();
             i++;
         }

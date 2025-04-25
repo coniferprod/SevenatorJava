@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -18,7 +19,7 @@ public class KeyboardLevelScaling {
         POSITIVE,
     };
 
-    public record Curve(Style style, Sign sign) { /* NO BODY */
+    public record Curve(Style style, Sign sign) {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -33,7 +34,7 @@ public class KeyboardLevelScaling {
             return sb.toString();
         }
 
-        public UInt8 toUInt8() {
+        public UInt7 toUInt7() {
             int value = switch (this.style) {
                 case LINEAR -> switch (this.sign) {
                     case POSITIVE -> 3;
@@ -44,7 +45,7 @@ public class KeyboardLevelScaling {
                     case NEGATIVE -> 1;
                 };
             };
-            return new UInt8(value);
+            return new UInt7(value);
         }
     }
 
@@ -61,7 +62,7 @@ public class KeyboardLevelScaling {
         this.right = new Scaling(new Level(0), new Curve(Style.LINEAR, Sign.NEGATIVE));
     }
 
-    public static KeyboardLevelScaling parse(List<UInt8> data) throws ParseException {
+    public static KeyboardLevelScaling parse(List<UInt7> data) throws ParseException {
         //System.out.print("KLS data: "); UInt8.printList(data);
         KeyboardLevelScaling kls = new KeyboardLevelScaling();
         kls.breakpoint = new Key(data.get(0).value());
@@ -89,14 +90,14 @@ public class KeyboardLevelScaling {
         return kls;
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
-        result.add(new UInt8(this.breakpoint.value()));
-        result.add(new UInt8(this.left.depth.value()));
-        result.add(new UInt8(this.right.depth.value()));
-        result.add(this.left.curve.toUInt8());
-        result.add(this.right.curve.toUInt8());
+        result.add(new UInt7(this.breakpoint.value()));
+        result.add(new UInt7(this.left.depth.value()));
+        result.add(new UInt7(this.right.depth.value()));
+        result.add(this.left.curve.toUInt7());
+        result.add(this.right.curve.toUInt7());
 
         return result;
     }

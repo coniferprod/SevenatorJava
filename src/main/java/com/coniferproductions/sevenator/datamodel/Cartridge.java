@@ -1,6 +1,7 @@
 package com.coniferproductions.sevenator.datamodel;
 
 import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -284,7 +285,7 @@ public final class Cartridge {
         return lfo;
     }
 
-    public static Cartridge parse(List<UInt8> data) throws ParseException {
+    public static Cartridge parse(List<UInt7> data) throws ParseException {
         if (data.size() != DATA_SIZE) {
             throw new ParseException(
                     String.format("Error in data size, expecting %d bytes, got %d", DATA_SIZE, data.size()));
@@ -295,8 +296,8 @@ public final class Cartridge {
 
         int offset = 0;
         for (int i = 0; i < VOICE_COUNT; i++) {
-            List<UInt8> packedVoiceData = data.subList(offset, offset + Voice.PACKED_DATA_SIZE);
-            List<UInt8> voiceData = Voice.unpack(packedVoiceData);
+            List<UInt7> packedVoiceData = data.subList(offset, offset + Voice.PACKED_DATA_SIZE);
+            List<UInt7> voiceData = Voice.unpack(packedVoiceData);
             //System.out.print("offset = " + offset + ", voice " + (i + 1) + " data ");
             Voice voice = Voice.parse(voiceData);
             cartridge.voices.set(i, voice);
@@ -347,8 +348,8 @@ public final class Cartridge {
         }
     }
 
-    public List<UInt8> toData() {
-        List<UInt8> result = new ArrayList<>();
+    public List<UInt7> toData() {
+        List<UInt7> result = new ArrayList<>();
 
         int index = 0;
         for (Voice voice : this.voices) {

@@ -28,11 +28,11 @@ public class Import implements Runnable {
     private void saveCartridge(Path path, Cartridge cartridge) {
         Header header = new Header(new Channel(1), Header.Format.CARTRIDGE);
 
-        List<UInt8> payload = new ArrayList<>();
+        List<UInt7> payload = new ArrayList<>();
         payload.addAll(header.toData());
-        List<UInt8> data = cartridge.toData();
+        List<UInt7> data = cartridge.toData();
         payload.addAll(data);
-        payload.add(UInt8.checksum(data));
+        payload.add(UInt7.checksum(data));
 
         Message message = new Message(Manufacturer.YAMAHA, payload);
         byte[] fileData = UInt8.byteArrayFromList(message.toData());

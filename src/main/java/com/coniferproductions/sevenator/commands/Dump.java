@@ -7,6 +7,7 @@ import com.coniferproductions.sevenator.datamodel.Voice;
 import com.coniferproductions.sevenator.sysex.Header;
 import com.coniferproductions.sevenator.sysex.Loader;
 import com.coniferproductions.sevenator.sysex.Message;
+import com.coniferproductions.sevenator.sysex.UInt7;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -95,12 +96,12 @@ public class Dump implements Runnable {
         logger.log(DEBUG, header);
         System.out.println("header = " + header);
 
-        List<UInt8> payload = message.getPayload();
+        List<UInt7> payload = message.getPayload();
         System.out.println("payload size = " + payload.size());
         int dataStart = header.getDataSize();
         int dataEnd = payload.size() - 1;
         System.out.println("cartridge data is " + dataStart + " .. " + dataEnd);
-        List<UInt8> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
+        List<UInt7> cartridgeData = payload.subList(header.getDataSize(), payload.size() - 1);
         System.out.println("cartridge data size = " + cartridgeData.size());
 
         this.cartridge = Cartridge.parse(cartridgeData);
