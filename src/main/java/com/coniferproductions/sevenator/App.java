@@ -1,9 +1,6 @@
 package com.coniferproductions.sevenator;
 
-import com.coniferproductions.sevenator.commands.Dump;
-import com.coniferproductions.sevenator.commands.Export;
-import com.coniferproductions.sevenator.commands.Import;
-import com.coniferproductions.sevenator.commands.Generate;
+import com.coniferproductions.sevenator.commands.*;
 import com.coniferproductions.sevenator.datamodel.Cartridge;
 
 import java.io.*;
