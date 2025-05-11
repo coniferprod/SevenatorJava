@@ -184,7 +184,7 @@ public final class Voice {
         result.add(this.oscSync ? UInt7.ONE : UInt7.ZERO);
         result.addAll(this.lfo.toData());
         result.add(new UInt7(this.pitchModulationSensitivity.value()));
-        result.add(new UInt7(this.transpose.value() * 12 + 24));  // adjust -2...+2 to 0...48
+        result.add(new UInt7(this.transpose.value() + 24));  // adjust -24...+24 to 0...48
 
         byte[] nameBytes = this.name.toString().getBytes(StandardCharsets.US_ASCII);
         List<UInt7> nameData = new ArrayList<>();
@@ -217,8 +217,8 @@ public final class Voice {
 
         Depth feedback = new Depth(data.get(135).value());
 
-        // number of octaves to transpose (-2...+2) (12 = C2, value is 0...48 in SysEx)
-        Transpose transpose = new Transpose((data.get(144).value() - 24) / 12);
+        // number of semitones to transpose (-24...+24) (12 = C2, value is 0...48 in SysEx)
+        Transpose transpose = new Transpose(data.get(144).value() - 24);
 
         List<UInt7> nameData = data.subList(145, 155);
         byte[] nameBytes = new byte[nameData.size()];
@@ -259,15 +259,16 @@ public final class Voice {
         element.setAttribute("oscillatorSync", Boolean.toString(this.oscSync));
         element.setAttribute("pitchModulationSensitivity", Integer.toString(this.pitchModulationSensitivity.value()));
 
-        element.appendChild(this.peg.toXMLNamed(document, "peg"));
-        element.appendChild(this.lfo.toXMLNamed(document, "lfo"));
-
         Element operatorsElement = document.createElement("operators");
         List<OperatorIndex> operatorIndices = new ArrayList<>(operators.keySet());
         for (OperatorIndex index : operatorIndices) {
             operatorsElement.appendChild(this.operators.get(index).toXML(document));
         }
         element.appendChild(operatorsElement);
+
+        element.appendChild(this.peg.toXMLNamed(document, "peg"));
+        element.appendChild(this.lfo.toXMLNamed(document, "lfo"));
+
         return element;
     }
 }
