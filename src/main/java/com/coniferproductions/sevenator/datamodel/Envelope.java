@@ -1,14 +1,13 @@
 package com.coniferproductions.sevenator.datamodel;
 
-import com.coniferproductions.sevenator.UInt8;
-import com.coniferproductions.sevenator.sysex.UInt7;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-import java.sql.Array;
-import java.util.ArrayList;
-import java.util.List;
+import com.coniferproductions.sevenator.sysex.UInt7;
 
 public final class Envelope {
     public static final int RATE_COUNT = 4;

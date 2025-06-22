@@ -1,12 +1,13 @@
 package com.coniferproductions.sevenator.datamodel;
 
-import com.coniferproductions.sevenator.UInt8;
-import com.coniferproductions.sevenator.sysex.UInt7;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 
 public class Operator {
     public enum Mode {
@@ -68,8 +69,6 @@ public class Operator {
 
     public static List<UInt7> pack(List<UInt7> data) {
         List<UInt7> result = new ArrayList<>();
-
-        int offset = 0;
 
         // Copy the EG bytes as is.
         result.addAll(data.subList(0, 8));

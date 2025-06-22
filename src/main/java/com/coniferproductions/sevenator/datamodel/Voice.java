@@ -1,12 +1,15 @@
 package com.coniferproductions.sevenator.datamodel;
 
-import com.coniferproductions.sevenator.UInt8;
-import com.coniferproductions.sevenator.sysex.UInt7;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import com.coniferproductions.sevenator.sysex.UInt7;
 
 public final class Voice {
     public static final int DATA_SIZE = 155;
@@ -173,8 +176,9 @@ public final class Voice {
     public List<UInt7> toData() {
         List<UInt7> result = new ArrayList<>();
 
-        for (int i = 5; i >= 0; i--) { // NOTE: reverse order!
-            result.addAll(this.operators.get(i).toData());
+        // NOTE: reverse order!
+        for (int index = OperatorIndex.TYPE.last(); index <= OperatorIndex.TYPE.first(); index--) {
+            result.addAll(this.getOperator(new OperatorIndex(index)).toData());
         }
 
         result.addAll(this.peg.toData());
@@ -227,7 +231,6 @@ public final class Voice {
             nameBytes[i] = (byte) b.value();
             i++;
         }
-        // TODO: Put this in a VoiceName constructor
         VoiceName name = new VoiceName(new String(nameBytes, StandardCharsets.UTF_8));
 
         LFO lfo = LFO.parse(data.subList(137, 143));
@@ -237,7 +240,7 @@ public final class Voice {
         voice.peg = peg;
         voice.algorithm = alg;
         voice.feedback = feedback;
-        voice.oscSync = data.get(136).equals(UInt8.ONE);
+        voice.oscSync = data.get(136).equals(UInt7.ONE);
         voice.lfo = lfo;
         voice.pitchModulationSensitivity = new Depth(data.get(143).value());
         voice.transpose = transpose;

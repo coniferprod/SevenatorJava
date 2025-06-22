@@ -1,14 +1,14 @@
 package com.coniferproductions.sevenator.datamodel;
 
-import com.coniferproductions.sevenator.RangedInteger;
-import com.coniferproductions.sevenator.UInt8;
-import com.coniferproductions.sevenator.sysex.UInt7;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import com.coniferproductions.sevenator.UInt8;
+import com.coniferproductions.sevenator.sysex.UInt7;
 
 public class LFO {
     public enum Waveform {
